@@ -3,6 +3,7 @@ import { clientData } from './clientData.js';
 const state = {
   page: 'overview',
   selectedWork: 0,
+  objectScope: 'all',
 };
 
 const pages = [
@@ -43,8 +44,51 @@ function short(text, limit = 46) {
   return value.length > limit ? `${value.slice(0, limit - 1)}…` : value;
 }
 
+function knownObjects() {
+  return [
+    {
+      id: 'object-1',
+      name: 'Объект 1',
+      summary: clientData.objectSheet.summary,
+      rows: clientData.objectSheet.rows,
+    },
+  ];
+}
+
+function selectedObjects() {
+  const objects = knownObjects();
+  if (state.objectScope === 'all') return objects;
+  return objects.filter((object) => object.id === state.objectScope);
+}
+
+function activeScopeLabel() {
+  if (state.objectScope === 'all') return 'Все объекты';
+  return knownObjects().find((object) => object.id === state.objectScope)?.name || 'Объект';
+}
+
+function aggregateSummary(objects = selectedObjects()) {
+  const keys = [
+    'revenue',
+    'contractorCost',
+    'grossProfit',
+    'advance',
+    'tools',
+    'customerExpenses',
+    'tax',
+    'housing',
+    'laborers',
+    'unplanned',
+    'netProfit',
+  ];
+
+  return keys.reduce((result, key) => {
+    result[key] = objects.reduce((total, object) => total + Number(object.summary?.[key] || 0), 0);
+    return result;
+  }, {});
+}
+
 function objectSummary() {
-  return clientData.objectSheet.summary;
+  return aggregateSummary();
 }
 
 function workRows() {
@@ -89,7 +133,9 @@ function objectExpenseTotal() {
 }
 
 function objectRows() {
-  return clientData.objectSheet.rows.filter((row) => row.revenue || row.contractorCost || row.grossProfit || row.netProfit);
+  return selectedObjects()
+    .flatMap((object) => object.rows.map((row) => ({ ...row, objectName: object.name, objectId: object.id })))
+    .filter((row) => row.revenue || row.contractorCost || row.grossProfit || row.netProfit);
 }
 
 function reportMetrics() {
@@ -138,17 +184,18 @@ function renderOverview() {
   const margin = pct(s.netProfit, s.revenue);
   return `
     <div class="screen dashboard-report">
+      ${renderObjectScope()}
       <section class="kpi-row">
-        ${kpiCard('Выручка', money(s.revenue), 'Стоимость по объекту')}
+        ${kpiCard('Выручка', money(s.revenue), activeScopeLabel())}
         ${kpiCard('Валовая прибыль', money(s.grossProfit), `${number(pct(s.grossProfit, s.revenue))}% от выручки`)}
         ${kpiCard('Чистая прибыль', money(s.netProfit), `${number(margin)}% маржа`)}
-        ${kpiCard('Расходы по статьям', money(objectExpenseTotal()), 'категории ведомости')}
+        ${kpiCard('Работ в ведомости', number(objectRows().length, 0), 'строки выбранного среза')}
       </section>
 
       <section class="report-grid overview-grid">
         <article class="panel chart-panel span-6 row-2">
           <div class="panel-title">
-            <h3>Финансовая структура объекта</h3>
+            <h3>Финансовая структура</h3>
           </div>
           <canvas id="overviewResultChart"></canvas>
         </article>
@@ -171,70 +218,147 @@ function renderOverview() {
 function renderObject() {
   const s = objectSummary();
   return `
-    <div class="screen category-screen">
+    <div class="screen category-screen scoped-screen">
+      ${renderObjectScope()}
       <section class="category-head">
-        ${kpiCard('Выручка', money(s.revenue), 'Стоимость заказчика')}
+        ${kpiCard('Выручка', money(s.revenue), activeScopeLabel())}
         ${kpiCard('Исполнитель', money(s.contractorCost), 'Стоимость работ')}
         ${kpiCard('Валовая прибыль', money(s.grossProfit), 'До объектных расходов')}
-        ${kpiCard('Чистая прибыль', money(s.netProfit), 'После расходов')}
+        ${kpiCard('Работ', number(objectRows().length, 0), 'строки ведомости')}
       </section>
 
       <section class="report-grid object-grid">
-        <article class="panel chart-panel span-6 row-2">
-          <div class="panel-title">
-            <h3>План / факт / экономика строк</h3>
-          </div>
-          <canvas id="objectRowsChart"></canvas>
-        </article>
-
-        <article class="panel metric-table span-6">
-          <div class="panel-title">
-            <h3>Показатели объекта</h3>
-          </div>
-          ${metricTable(reportMetrics().slice(0, 6))}
-        </article>
-
-        <article class="panel table-panel span-6">
-          <div class="panel-title">
-            <h3>Строки основной ведомости</h3>
-          </div>
-          <div class="clean-table">
-            <table>
-              <thead>
-                <tr>
-                  <th>№</th>
-                  <th>Работа</th>
-                  <th class="right">Факт</th>
-                  <th class="right">Заказчик</th>
-                  <th class="right">Исполнитель</th>
-                  <th class="right">Прибыль</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${objectRows().slice(0, 12).map((row) => `
-                  <tr>
-                    <td>${row.row}</td>
-                    <td>${row.workName || `Строка ${row.row}`}</td>
-                    <td class="right">${number(row.actualQty, 0)}</td>
-                    <td class="right">${money(row.revenue)}</td>
-                    <td class="right">${money(row.contractorCost)}</td>
-                    <td class="right">${money(row.grossProfit || row.netProfit)}</td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-          </div>
-        </article>
+        ${state.objectScope === 'all' ? renderAllObjectsView() : renderSingleObjectView()}
       </section>
     </div>
   `;
 }
 
+function renderObjectScope() {
+  return `
+    <section class="scope-row" aria-label="Срез объектов">
+      <span>Срез</span>
+      <button class="${state.objectScope === 'all' ? 'active' : ''}" data-object-scope="all">
+        Все объекты
+      </button>
+      ${knownObjects().map((object) => `
+        <button class="${state.objectScope === object.id ? 'active' : ''}" data-object-scope="${object.id}">
+          ${object.name}
+        </button>
+      `).join('')}
+    </section>
+  `;
+}
+
+function objectCards() {
+  return knownObjects().map((object) => {
+    const summary = aggregateSummary([object]);
+    const rows = object.rows.filter((row) => row.revenue || row.contractorCost || row.grossProfit || row.netProfit);
+    return { ...object, summary, rows };
+  });
+}
+
+function renderAllObjectsView() {
+  return `
+    <article class="panel table-panel span-7 row-2">
+      <div class="panel-title">
+        <h3>Все известные объекты</h3>
+      </div>
+      <div class="clean-table">
+        <table>
+          <thead>
+            <tr>
+              <th>Объект</th>
+              <th class="right">Работ</th>
+              <th class="right">Выручка</th>
+              <th class="right">Исполнитель</th>
+              <th class="right">Чистая прибыль</th>
+              <th class="right">Маржа</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${objectCards().map((object) => `
+              <tr>
+                <td>
+                  <button class="link-button" data-object-scope="${object.id}">${object.name}</button>
+                </td>
+                <td class="right">${number(object.rows.length, 0)}</td>
+                <td class="right">${money(object.summary.revenue)}</td>
+                <td class="right">${money(object.summary.contractorCost)}</td>
+                <td class="right">${money(object.summary.netProfit)}</td>
+                <td class="right">${number(pct(object.summary.netProfit, object.summary.revenue))}%</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    </article>
+
+    <article class="panel chart-panel span-5 row-2">
+      <div class="panel-title">
+        <h3>Сравнение объектов</h3>
+      </div>
+      <canvas id="objectsCompareChart"></canvas>
+    </article>
+  `;
+}
+
+function renderSingleObjectView() {
+  return `
+    <article class="panel chart-panel span-6 row-2">
+      <div class="panel-title">
+        <h3>Работы внутри объекта</h3>
+      </div>
+      <canvas id="objectRowsChart"></canvas>
+    </article>
+
+    <article class="panel metric-table span-6">
+      <div class="panel-title">
+        <h3>Показатели объекта</h3>
+      </div>
+      ${metricTable(reportMetrics().slice(0, 6))}
+    </article>
+
+    <article class="panel table-panel span-6">
+      <div class="panel-title">
+        <h3>Строки работ</h3>
+      </div>
+      <div class="clean-table">
+        <table>
+          <thead>
+            <tr>
+              <th>№</th>
+              <th>Работа</th>
+              <th class="right">Факт</th>
+              <th class="right">Заказчик</th>
+              <th class="right">Исполнитель</th>
+              <th class="right">Прибыль</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${objectRows().map((row) => `
+              <tr>
+                <td>${row.row}</td>
+                <td>${row.workName || `Строка ${row.row}`}</td>
+                <td class="right">${number(row.actualQty, 0)}</td>
+                <td class="right">${money(row.revenue)}</td>
+                <td class="right">${money(row.contractorCost)}</td>
+                <td class="right">${money(row.grossProfit || row.netProfit)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    </article>
+  `;
+}
+
 function renderExpenses() {
   return `
-    <div class="screen category-screen">
+    <div class="screen category-screen scoped-screen">
+      ${renderObjectScope()}
       <section class="category-head">
-        ${kpiCard('Расходы объекта', money(objectExpenseTotal()), 'По основной ведомости')}
+        ${kpiCard('Расходы объекта', money(objectExpenseTotal()), activeScopeLabel())}
         ${kpiCard('Постоянные платежи', money(fixedTotal()), 'Расходы компании')}
         ${kpiCard('Статей объекта', number(objectExpenses().length, 0), 'Категории расходов')}
         ${kpiCard('Статей платежей', number(fixedItems().length, 0), 'Постоянные статьи')}
@@ -443,6 +567,12 @@ function bindEvents() {
       renderApp();
     });
   });
+  document.querySelectorAll('[data-object-scope]').forEach((button) => {
+    button.addEventListener('click', () => {
+      state.objectScope = button.dataset.objectScope || 'all';
+      renderApp();
+    });
+  });
   document.getElementById('seedButton').onclick = renderApp;
 }
 
@@ -491,6 +621,28 @@ function renderCharts() {
           backgroundColor: 'rgba(177, 109, 136, 0.1)',
           fill: true,
           tension: 0.3,
+        },
+      ],
+    },
+    options: axisOptions(true),
+  });
+
+  addIfPresent('objectsCompareChart', {
+    type: 'bar',
+    data: {
+      labels: objectCards().map((object) => object.name),
+      datasets: [
+        {
+          label: 'Выручка',
+          data: objectCards().map((object) => object.summary.revenue),
+          backgroundColor: palette[0],
+          borderRadius: 9,
+        },
+        {
+          label: 'Чистая прибыль',
+          data: objectCards().map((object) => object.summary.netProfit),
+          backgroundColor: palette[1],
+          borderRadius: 9,
         },
       ],
     },

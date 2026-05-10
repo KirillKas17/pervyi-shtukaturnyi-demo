@@ -15,6 +15,10 @@
   box-sizing: border-box;
 }
 
+.hidden {
+  display: none !important;
+}
+
 html,
 body {
   width: 100%;
@@ -228,15 +232,66 @@ h3 {
   overflow: hidden;
 }
 
-.dashboard-report,
+.dashboard-report {
+  display: grid;
+  grid-template-rows: 38px 108px minmax(0, 1fr);
+  gap: 14px;
+}
+
 .category-screen {
   display: grid;
   grid-template-rows: 116px minmax(0, 1fr);
   gap: 14px;
 }
 
+.category-screen.scoped-screen {
+  grid-template-rows: 38px 108px minmax(0, 1fr);
+}
+
 .category-screen:has(.work-tabs) {
   grid-template-rows: 42px 116px minmax(0, 1fr);
+}
+
+.scope-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.scope-row span {
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.scope-row button,
+.link-button {
+  border: 1px solid var(--line);
+  background: #ffffff;
+  color: var(--ink);
+  font-weight: 900;
+}
+
+.scope-row button {
+  min-width: 0;
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 999px;
+  overflow: hidden;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.scope-row button.active {
+  border-color: var(--dark);
+  background: var(--dark);
+  color: #ffffff;
 }
 
 .kpi-row,
@@ -424,6 +479,16 @@ h3 {
 table {
   width: 100%;
   border-collapse: collapse;
+}
+
+.link-button {
+  max-width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  font-size: 12px;
+  text-align: left;
 }
 
 th,
