@@ -246,7 +246,7 @@ h3 {
 
 .dashboard-screen {
   display: grid;
-  grid-template-rows: 116px minmax(0, 1fr);
+  grid-template-rows: 38px 108px minmax(0, 1fr);
   gap: 14px;
 }
 
@@ -530,6 +530,7 @@ th {
 }
 
 .object-screen,
+.objects-screen,
 .finance-screen,
 .reports-screen,
 .analytics-screen {
@@ -538,8 +539,75 @@ th {
   gap: 14px;
 }
 
+.object-list {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+  grid-auto-rows: max-content;
+  min-height: 0;
+  overflow: hidden auto;
+}
+
+.object-card {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.7fr) minmax(0, 1.6fr) auto;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: var(--shadow);
+}
+
+.object-card h3 {
+  margin-bottom: 0;
+}
+
+.object-card__metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.object-open {
+  min-width: 112px;
+}
+
 .analytics-screen {
-  grid-template-rows: minmax(0, 1fr);
+  grid-template-rows: 38px minmax(0, 1fr);
+}
+
+.scope-tabs {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 0;
+}
+
+.scope-tabs button,
+.back-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #ffffff;
+  color: var(--ink);
+  font-weight: 800;
+}
+
+.scope-tabs button.active {
+  border-color: var(--dark);
+  background: var(--dark);
+  color: #ffffff;
+}
+
+.back-button {
+  margin-bottom: 8px;
+  color: var(--muted);
 }
 
 .analytics-grid {

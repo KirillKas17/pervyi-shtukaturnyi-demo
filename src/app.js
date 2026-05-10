@@ -3,6 +3,8 @@ import { clientData } from './clientData.js';
 const state = {
   page: 'dashboard',
   selectedWork: 0,
+  selectedObject: 'all',
+  objectMode: 'list',
 };
 
 let charts = new Map();
@@ -14,7 +16,7 @@ const chartText = '#5f6b7a';
 const pages = [
   ['dashboard', 'Дашборд'],
   ['analytics', 'Аналитика'],
-  ['object', 'Ведомость'],
+  ['object', 'Объекты'],
   ['finance', 'Финансы'],
   ['reports', 'Отчеты'],
 ];
@@ -44,8 +46,41 @@ function sum(rows, key) {
   return rows.reduce((total, row) => total + Number(row[key] || 0), 0);
 }
 
-function expenseRows() {
-  const s = clientData.objectSheet.summary;
+function objects() {
+  return [{
+    id: 'object-1',
+    name: 'Объект 1',
+    status: 'В работе',
+    summary: clientData.objectSheet.summary,
+    rows: clientData.objectSheet.rows,
+  }];
+}
+
+function selectedObjects() {
+  if (state.selectedObject === 'all') return objects();
+  return objects().filter((object) => object.id === state.selectedObject);
+}
+
+function activeObject() {
+  return objects().find((object) => object.id === state.selectedObject) || objects()[0];
+}
+
+function aggregateSummary(scopeObjects = selectedObjects()) {
+  const keys = ['revenue', 'contractorCost', 'grossProfit', 'advance', 'tools', 'customerExpenses', 'tax', 'housing', 'laborers', 'unplanned', 'netProfit'];
+  return scopeObjects.reduce((result, object) => {
+    keys.forEach((key) => {
+      result[key] = Number(result[key] || 0) + Number(object.summary[key] || 0);
+    });
+    return result;
+  }, {});
+}
+
+function visibleObjectRows(object = activeObject()) {
+  return object.rows.filter((row) => row.revenue || row.contractorCost || row.netProfit || row.executor);
+}
+
+function expenseRows(summary = aggregateSummary()) {
+  const s = summary;
   return [
     ['Аванс Исполнитель', s.advance],
     ['Расходники инструмент', s.tools],
@@ -79,7 +114,9 @@ function renderApp() {
   `).join('');
 
   document.getElementById('sectionLabel').textContent = 'BI Analytics';
-  document.getElementById('pageTitle').textContent = pages.find(([id]) => id === state.page)?.[1] || 'Дашборд';
+  document.getElementById('pageTitle').textContent = state.page === 'object' && state.objectMode === 'detail'
+    ? 'Детализация объекта'
+    : pages.find(([id]) => id === state.page)?.[1] || 'Дашборд';
   const primary = document.getElementById('primaryAction');
   primary.textContent = 'Excel данные';
   primary.style.display = 'inline-flex';
@@ -99,12 +136,13 @@ function renderApp() {
 }
 
 function renderDashboard() {
-  const s = clientData.objectSheet.summary;
+  const s = aggregateSummary();
   const calcRows = clientData.finance.calcRows;
   const calcRevenue = sum(calcRows, 'revenue');
   const margin = pct(s.netProfit, s.revenue);
   return `
     <div class="dashboard-screen">
+      ${scopeTabs()}
       <div class="dashboard-grid dashboard-slot dashboard-slot--kpi">
         ${metricCard('Выручка', money(s.revenue), 'по ведомости')}
         ${metricCard('Чистая прибыль', money(s.netProfit), `${number(pct(s.netProfit, s.revenue))}% маржа`, s.netProfit >= 0 ? 'good' : 'bad')}
@@ -139,6 +177,7 @@ function renderDashboard() {
 function renderAnalytics() {
   return `
     <div class="screen analytics-screen">
+      ${scopeTabs()}
       <div class="analytics-grid">
         <section class="panel chart-panel analytics-expense">
           <div class="panel-title">
@@ -175,15 +214,43 @@ function renderAnalytics() {
 }
 
 function renderObjectSheet() {
-  const rows = clientData.objectSheet.rows;
-  const visible = rows.filter((row) => row.revenue || row.contractorCost || row.netProfit || row.executor);
-  const s = clientData.objectSheet.summary;
+  if (state.objectMode === 'detail') return renderObjectDetail();
+  return renderObjectList();
+}
+
+function renderObjectList() {
+  return `
+    <div class="screen objects-screen">
+      <div class="simple-header">
+        <div>
+          <p class="eyebrow">Объекты ремонта</p>
+          <h2>Реестр объектов</h2>
+        </div>
+        <div class="mini-kpis">
+          ${miniKpi('Всего объектов', number(objects().length, 0))}
+          ${miniKpi('Выручка', money(aggregateSummary(objects()).revenue))}
+          ${miniKpi('Чистая прибыль', money(aggregateSummary(objects()).netProfit))}
+        </div>
+      </div>
+
+      <section class="object-list">
+        ${objects().map((object) => objectCard(object)).join('')}
+      </section>
+    </div>
+  `;
+}
+
+function renderObjectDetail() {
+  const object = activeObject();
+  const visible = visibleObjectRows(object);
+  const s = object.summary;
   return `
     <div class="screen object-screen">
       <div class="simple-header">
         <div>
+          <button class="back-button" data-back-objects>← Назад к объектам</button>
           <p class="eyebrow">Общая сводная ведомость</p>
-          <h2>Сводная ведомость объекта</h2>
+          <h2>${object.name}</h2>
         </div>
         <div class="mini-kpis">
           ${miniKpi('Стоимость ИП Курочкин', money(s.revenue))}
@@ -226,6 +293,25 @@ function renderObjectSheet() {
         </div>
       </section>
     </div>
+  `;
+}
+
+function objectCard(object) {
+  const s = object.summary;
+  return `
+    <article class="object-card">
+      <div>
+        <p class="eyebrow">${object.status}</p>
+        <h3>${object.name}</h3>
+      </div>
+      <div class="object-card__metrics">
+        ${miniKpi('Выручка', money(s.revenue))}
+        ${miniKpi('Расходы', money(s.grossProfit - s.netProfit))}
+        ${miniKpi('Прибыль', money(s.netProfit))}
+        ${miniKpi('Маржа', `${number(pct(s.netProfit, s.revenue))}%`)}
+      </div>
+      <button class="primary-button object-open" data-object-open="${object.id}">Открыть</button>
+    </article>
   `;
 }
 
@@ -349,6 +435,18 @@ function metricCard(label, value, note, tone = '') {
   `;
 }
 
+function scopeTabs() {
+  const current = state.selectedObject;
+  return `
+    <div class="scope-tabs">
+      <button class="${current === 'all' ? 'active' : ''}" data-scope="all">Все объекты</button>
+      ${objects().map((object) => `
+        <button class="${current === object.id ? 'active' : ''}" data-scope="${object.id}">${object.name}</button>
+      `).join('')}
+    </div>
+  `;
+}
+
 function miniKpi(label, value) {
   return `<div class="mini-kpi"><span>${label}</span><strong>${value}</strong></div>`;
 }
@@ -393,16 +491,36 @@ function bindEvents() {
       renderApp();
     });
   });
+  document.querySelectorAll('[data-scope]').forEach((button) => {
+    button.addEventListener('click', () => {
+      state.selectedObject = button.dataset.scope;
+      renderApp();
+    });
+  });
+  document.querySelectorAll('[data-object-open]').forEach((button) => {
+    button.addEventListener('click', () => {
+      state.selectedObject = button.dataset.objectOpen;
+      state.objectMode = 'detail';
+      renderApp();
+    });
+  });
+  document.querySelectorAll('[data-back-objects]').forEach((button) => {
+    button.addEventListener('click', () => {
+      state.objectMode = 'list';
+      renderApp();
+    });
+  });
   document.getElementById('seedButton').onclick = renderApp;
 }
 
 function setPage(page) {
   state.page = page;
+  if (page === 'object') state.objectMode = 'list';
   renderApp();
 }
 
 function renderCharts() {
-  const s = clientData.objectSheet.summary;
+  const s = aggregateSummary();
   if (document.getElementById('resultChart')) {
     addChart('resultChart', {
       type: 'bar',
