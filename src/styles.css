@@ -1,16 +1,12 @@
 :root {
-  --bg: #f6f7fb;
+  --bg: #ffffff;
   --panel: #ffffff;
-  --ink: #111827;
-  --muted: #697386;
-  --line: #e8ebf2;
-  --dark: #070b16;
-  --purple: #6d5dfc;
-  --blue: #40a9ff;
-  --pink: #ff6fae;
-  --green: #0f9f6e;
-  --red: #d92d20;
-  --shadow: 0 18px 50px rgba(16, 24, 40, 0.08);
+  --ink: #050505;
+  --muted: #6f6f6f;
+  --line: #e7e7e7;
+  --dark: #050505;
+  --soft: #f6f6f6;
+  --shadow: 0 16px 44px rgba(5, 5, 5, 0.07);
 }
 
 * {
@@ -66,8 +62,10 @@ button {
   place-items: center;
   width: 38px;
   height: 38px;
+  border: 1px solid rgba(255,255,255,0.18);
   border-radius: 10px;
-  background: linear-gradient(135deg, var(--purple), #9a6cff);
+  background: #ffffff;
+  color: #050505;
   font-weight: 900;
 }
 
@@ -88,7 +86,8 @@ button {
   display: grid;
   gap: 8px;
   min-height: 0;
-  overflow: hidden auto;
+  padding-right: 0;
+  overflow: hidden;
 }
 
 .nav-button {
@@ -98,7 +97,7 @@ button {
   min-height: 42px;
   padding: 0 12px;
   border: 0;
-  border-radius: 10px;
+  border-radius: 35px 0 0 35px;
   background: transparent;
   color: #cbd5e1;
   text-align: left;
@@ -106,8 +105,12 @@ button {
 }
 
 .nav-button.active {
-  background: var(--purple);
-  color: #ffffff;
+  position: relative;
+  margin-right: -16px;
+  padding-right: 28px;
+  background: #ffffff;
+  color: #050505;
+  box-shadow: 14px 0 0 #ffffff;
 }
 
 .nav-icon {
@@ -143,9 +146,9 @@ button {
   align-items: center;
   justify-content: space-between;
   flex: 0 0 auto;
-  min-height: 94px;
+  min-height: 86px;
   padding: 24px 34px;
-  background: rgba(246, 247, 251, 0.9);
+  background: #ffffff;
   backdrop-filter: blur(14px);
 }
 
@@ -212,20 +215,35 @@ h3 {
 }
 
 .content {
+  display: flex;
+  flex-direction: column;
   flex: 1 1 auto;
   min-height: 0;
-  padding: 0 34px 34px;
-  overflow: hidden auto;
+  padding: 0 34px 26px;
+  overflow: hidden;
+}
+
+.dashboard-screen,
+.screen {
+  flex: 1 1 auto;
+  height: auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.dashboard-screen {
+  display: grid;
+  grid-template-rows: 116px minmax(0, 1fr);
+  gap: 14px;
 }
 
 .dashboard-grid {
   display: grid;
-  grid-template-columns: 1.45fr repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 14px;
-  margin-bottom: 16px;
+  min-height: 0;
 }
 
-.hero-panel,
 .metric-card,
 .panel {
   border: 1px solid var(--line);
@@ -234,30 +252,12 @@ h3 {
   box-shadow: var(--shadow);
 }
 
-.hero-panel {
-  padding: 20px;
-}
-
-.hero-panel p {
-  margin-bottom: 0;
-  color: var(--muted);
-  font-size: 13px;
-  line-height: 19px;
-}
-
-.source-line {
-  margin-top: 14px;
-  color: var(--purple);
-  font-size: 12px;
-  font-weight: 800;
-}
-
 .metric-card {
   display: grid;
   align-content: center;
-  gap: 8px;
-  min-height: 138px;
-  padding: 18px;
+  gap: 6px;
+  min-height: 0;
+  padding: 16px;
 }
 
 .metric-card span,
@@ -269,8 +269,8 @@ h3 {
 }
 
 .metric-card strong {
-  font-size: 25px;
-  line-height: 30px;
+  font-size: 24px;
+  line-height: 28px;
 }
 
 .metric-card small {
@@ -280,39 +280,45 @@ h3 {
 
 .metric-card.good strong,
 .good {
-  color: var(--green);
+  color: var(--ink);
 }
 
 .metric-card.bad strong,
 .bad {
-  color: var(--red);
+  color: var(--ink);
 }
 
 .chart-layout {
   display: grid;
   grid-template-columns: minmax(0, 1.3fr) minmax(320px, 0.7fr);
+  grid-template-rows: repeat(2, minmax(0, 1fr));
   gap: 16px;
+  min-height: 0;
 }
 
 .panel {
   min-width: 0;
-  padding: 18px;
+  min-height: 0;
+  padding: 16px;
 }
 
 .chart-panel {
-  height: 320px;
+  height: auto;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .chart-panel.wide {
   grid-row: span 2;
-  height: 656px;
+  height: auto;
 }
 
 .panel-title {
   display: flex;
   justify-content: space-between;
   gap: 14px;
-  margin-bottom: 12px;
+  min-height: 24px;
+  margin-bottom: 10px;
 }
 
 .panel-title p,
@@ -324,7 +330,7 @@ h3 {
 
 .chart-panel canvas {
   width: 100% !important;
-  height: calc(100% - 58px) !important;
+  height: calc(100% - 34px) !important;
 }
 
 .simple-header {
@@ -332,7 +338,8 @@ h3 {
   align-items: flex-start;
   justify-content: space-between;
   gap: 18px;
-  margin-bottom: 16px;
+  flex: 0 0 auto;
+  margin-bottom: 0;
 }
 
 .mini-kpis,
@@ -349,10 +356,10 @@ h3 {
 
 .mini-kpi {
   min-width: 150px;
-  padding: 14px;
+  padding: 12px;
   border: 1px solid var(--line);
   border-radius: 12px;
-  background: #ffffff;
+  background: var(--soft);
 }
 
 .mini-kpi strong {
@@ -362,11 +369,13 @@ h3 {
 }
 
 .table-panel {
+  min-height: 0;
   overflow: hidden;
 }
 
 .clean-table {
-  max-height: 610px;
+  height: calc(100% - 44px);
+  max-height: none;
   overflow: auto;
   border: 1px solid var(--line);
   border-radius: 12px;
@@ -390,7 +399,7 @@ th {
   position: sticky;
   top: 0;
   z-index: 1;
-  background: #f9fafc;
+  background: #f7f7f7;
   color: var(--muted);
   font-size: 11px;
   font-weight: 900;
@@ -404,7 +413,17 @@ th {
 .finance-layout {
   display: grid;
   grid-template-columns: minmax(0, 1.2fr) minmax(340px, 0.8fr);
+  grid-template-rows: 132px minmax(0, 1fr);
   gap: 16px;
+  min-height: 0;
+}
+
+.object-screen,
+.finance-screen,
+.reports-screen {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 14px;
 }
 
 .work-card {
@@ -426,14 +445,15 @@ th {
 }
 
 .segmented button.active {
-  border-color: var(--purple);
-  background: var(--purple);
+  border-color: var(--dark);
+  background: var(--dark);
   color: #ffffff;
 }
 
 .bar-list {
   display: grid;
-  gap: 14px;
+  gap: 12px;
+  min-height: 0;
 }
 
 .progress-row {
@@ -456,20 +476,25 @@ th {
   height: 9px;
   overflow: hidden;
   border-radius: 999px;
-  background: #eef0f6;
+  background: #efefef;
 }
 
 .progress i {
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, var(--purple), var(--blue));
+  background: #050505;
 }
 
 .reports-grid {
   display: grid;
-  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr) minmax(0, 0.9fr);
+  grid-template-columns: minmax(0, 0.7fr) minmax(0, 1.3fr);
   gap: 16px;
+  min-height: 0;
+}
+
+.reports-grid .panel {
+  overflow: hidden auto;
 }
 
 .report-list {

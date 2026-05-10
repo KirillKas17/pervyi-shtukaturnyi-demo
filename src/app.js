@@ -14,8 +14,6 @@ const pages = [
   ['reports', 'Отчеты'],
 ];
 
-const sourceNote = `Источник: ${clientData.sourceFiles.join(' + ')}`;
-
 function money(value) {
   return new Intl.NumberFormat('ru-RU', {
     style: 'currency',
@@ -94,52 +92,39 @@ function renderDashboard() {
   const s = clientData.objectSheet.summary;
   const calcRows = clientData.finance.calcRows;
   const calcRevenue = sum(calcRows, 'revenue');
-  const calcNet = sum(calcRows, 'netProfit');
   const fixedTotal = clientData.finance.fixedMonths.reduce((total, row) => total + Number(row.total || 0), 0);
   return `
-    <div class="dashboard-grid">
-      <section class="hero-panel">
-        <p class="eyebrow">Пример дашборда по файлам клиента</p>
-        <h2>Финансовая картина без лишних сущностей</h2>
-        <p>На экране только показатели, которые удалось прочитать из приложенных Excel-шаблонов. Данные не дополнены вручную.</p>
-        <div class="source-line">${sourceNote}</div>
-      </section>
-      ${metricCard('Выручка по ведомости', money(s.revenue), 'строка Итого в общей сводной')}
-      ${metricCard('Чистая прибыль', money(s.netProfit), `${number(pct(s.netProfit, s.revenue))}% от выручки`, s.netProfit >= 0 ? 'good' : 'bad')}
-      ${metricCard('Расходы объекта', money(s.grossProfit - s.netProfit), 'после прибыли до расходов')}
-      ${metricCard('Расчет работ', money(calcRevenue), `${calcRows.length} позиции в файле расчета`)}
-    </div>
+    <div class="dashboard-screen">
+      <div class="dashboard-grid dashboard-slot dashboard-slot--kpi">
+        ${metricCard('Выручка', money(s.revenue), 'по ведомости')}
+        ${metricCard('Чистая прибыль', money(s.netProfit), `${number(pct(s.netProfit, s.revenue))}% маржа`, s.netProfit >= 0 ? 'good' : 'bad')}
+        ${metricCard('Расходы объекта', money(s.grossProfit - s.netProfit), 'статьи расходов')}
+        ${metricCard('Расчет работ', money(calcRevenue), `${calcRows.length} позиции`)}
+        ${metricCard('Постоянные платежи', money(fixedTotal), 'итого за год')}
+      </div>
 
-    <div class="chart-layout">
-      <section class="panel chart-panel wide">
-        <div class="panel-title">
-          <div>
-            <h3>Структура результата по объекту</h3>
-            <p>Выручка, исполнитель, расходы и чистая прибыль из общей сводной ведомости.</p>
+      <div class="chart-layout dashboard-slot dashboard-slot--charts">
+        <section class="panel chart-panel wide">
+          <div class="panel-title">
+            <h3>Структура результата</h3>
           </div>
-        </div>
-        <canvas id="resultChart"></canvas>
-      </section>
+          <canvas id="resultChart"></canvas>
+        </section>
 
-      <section class="panel chart-panel">
-        <div class="panel-title">
-          <div>
+        <section class="panel chart-panel">
+          <div class="panel-title">
             <h3>Расходы объекта</h3>
-            <p>Доли статей из блока “Расходы”.</p>
           </div>
-        </div>
-        <canvas id="expenseChart"></canvas>
-      </section>
+          <canvas id="expenseChart"></canvas>
+        </section>
 
-      <section class="panel chart-panel">
-        <div class="panel-title">
-          <div>
-            <h3>Постоянные платежи</h3>
-            <p>Итог по месяцам из финансового учета.</p>
+        <section class="panel chart-panel">
+          <div class="panel-title">
+            <h3>Платежи по месяцам</h3>
           </div>
-        </div>
-        <canvas id="fixedChart"></canvas>
-      </section>
+          <canvas id="fixedChart"></canvas>
+        </section>
+      </div>
     </div>
   `;
 }
@@ -149,53 +134,53 @@ function renderObjectSheet() {
   const visible = rows.filter((row) => row.revenue || row.contractorCost || row.netProfit || row.executor);
   const s = clientData.objectSheet.summary;
   return `
-    <div class="simple-header">
-      <div>
-        <p class="eyebrow">Общая сводная ведомость</p>
-        <h2>${clientData.objectSheet.name}</h2>
-        <p>${visible.length} строк с данными из листа “${clientData.objectSheet.sheet}”.</p>
+    <div class="screen object-screen">
+      <div class="simple-header">
+        <div>
+          <p class="eyebrow">Общая сводная ведомость</p>
+          <h2>${clientData.objectSheet.name}</h2>
+        </div>
+        <div class="mini-kpis">
+          ${miniKpi('Стоимость ИП Курочкин', money(s.revenue))}
+          ${miniKpi('Исполнитель', money(s.contractorCost))}
+          ${miniKpi('Чистая прибыль', money(s.netProfit))}
+        </div>
       </div>
-      <div class="mini-kpis">
-        ${miniKpi('Стоимость ИП Курочкин', money(s.revenue))}
-        ${miniKpi('Исполнитель', money(s.contractorCost))}
-        ${miniKpi('Чистая прибыль', money(s.netProfit))}
-      </div>
-    </div>
 
-    <section class="panel table-panel">
-      <div class="panel-title">
-        <h3>Строки ведомости</h3>
-        <p>Показываем только то, что есть в Excel: без названий объектов и без добавленных контрагентов.</p>
-      </div>
-      <div class="clean-table">
-        <table>
-          <thead>
-            <tr>
-              <th>№</th>
-              <th>Исполнитель</th>
-              <th>Работа</th>
-              <th class="right">Факт</th>
-              <th class="right">Цена заказчика</th>
-              <th class="right">Цена исполнителя</th>
-              <th class="right">Прибыль</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${visible.map((row) => `
+      <section class="panel table-panel">
+        <div class="panel-title">
+          <h3>Строки ведомости</h3>
+        </div>
+        <div class="clean-table">
+          <table>
+            <thead>
               <tr>
-                <td>${row.row}</td>
-                <td>${row.executor || '—'}</td>
-                <td>${row.workName || '—'}</td>
-                <td class="right">${number(row.actualQty, 0)} ${row.unit || ''}</td>
-                <td class="right">${money(row.clientPrice)}</td>
-                <td class="right">${money(row.contractorPrice)}</td>
-                <td class="right ${row.netProfit < 0 ? 'bad' : 'good'}">${money(row.netProfit || row.grossProfit)}</td>
+                <th>№</th>
+                <th>Исполнитель</th>
+                <th>Работа</th>
+                <th class="right">Факт</th>
+                <th class="right">Цена заказчика</th>
+                <th class="right">Цена исполнителя</th>
+                <th class="right">Прибыль</th>
               </tr>
-            `).join('')}
-          </tbody>
-        </table>
-      </div>
-    </section>
+            </thead>
+            <tbody>
+              ${visible.map((row) => `
+                <tr>
+                  <td>${row.row}</td>
+                  <td>${row.executor || '—'}</td>
+                  <td>${row.workName || '—'}</td>
+                  <td class="right">${number(row.actualQty, 0)} ${row.unit || ''}</td>
+                  <td class="right">${money(row.clientPrice)}</td>
+                  <td class="right">${money(row.contractorPrice)}</td>
+                  <td class="right ${row.netProfit < 0 ? 'bad' : 'good'}">${money(row.netProfit || row.grossProfit)}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
   `;
 }
 
@@ -214,49 +199,48 @@ function renderFinance() {
   ].filter(([, value]) => Number(value || 0) !== 0);
 
   return `
-    <div class="simple-header">
-      <div>
-        <p class="eyebrow">Расчет стоимости работ</p>
-        <h2>${clientData.finance.name}</h2>
-        <p>Здесь два расчета из файла: штукатурные работы и полусухая стяжка.</p>
+    <div class="screen finance-screen">
+      <div class="simple-header">
+        <div>
+          <p class="eyebrow">Расчет стоимости работ</p>
+          <h2>${clientData.finance.name}</h2>
+        </div>
+        <div class="segmented">
+          ${calcRows.map((row, index) => `
+            <button class="${index === state.selectedWork ? 'active' : ''}" data-work="${index}">${index + 1}</button>
+          `).join('')}
+        </div>
       </div>
-      <div class="segmented">
-        ${calcRows.map((row, index) => `
-          <button class="${index === state.selectedWork ? 'active' : ''}" data-work="${index}">${index + 1}</button>
-        `).join('')}
+
+      <div class="finance-layout">
+        <section class="panel work-card">
+          <p class="eyebrow">Выбранная работа</p>
+          <h3>${selected.name}</h3>
+          <div class="work-kpis">
+            ${miniKpi('Объем', number(selected.volume, 0))}
+            ${miniKpi('Выручка', money(selected.revenue))}
+            ${miniKpi('Исполнитель', money(selected.contractorCost))}
+            ${miniKpi('Итого', money(selected.netProfit))}
+            ${miniKpi('Итого %', `${number(selected.marginPct)}%`)}
+          </div>
+        </section>
+
+        <section class="panel chart-panel">
+          <div class="panel-title">
+            <h3>Экономика работы</h3>
+          </div>
+          <canvas id="workChart"></canvas>
+        </section>
+
+        <section class="panel table-panel">
+          <div class="panel-title">
+            <h3>Статьи расходов</h3>
+          </div>
+          <div class="bar-list">
+            ${costParts.map(([label, value]) => progressRow(label, value, selected.revenue)).join('')}
+          </div>
+        </section>
       </div>
-    </div>
-
-    <div class="finance-layout">
-      <section class="panel work-card">
-        <p class="eyebrow">Выбранная работа</p>
-        <h3>${selected.name}</h3>
-        <div class="work-kpis">
-          ${miniKpi('Объем', number(selected.volume, 0))}
-          ${miniKpi('Выручка', money(selected.revenue))}
-          ${miniKpi('Исполнитель', money(selected.contractorCost))}
-          ${miniKpi('Итого', money(selected.netProfit))}
-          ${miniKpi('Итого %', `${number(selected.marginPct)}%`)}
-        </div>
-      </section>
-
-      <section class="panel chart-panel">
-        <div class="panel-title">
-          <h3>Экономика работы</h3>
-          <p>Цена заказчика, исполнитель и итоговая прибыль.</p>
-        </div>
-        <canvas id="workChart"></canvas>
-      </section>
-
-      <section class="panel table-panel">
-        <div class="panel-title">
-          <h3>Статьи расходов</h3>
-          <p>Расшифровка по выбранной работе.</p>
-        </div>
-        <div class="bar-list">
-          ${costParts.map(([label, value]) => progressRow(label, value, selected.revenue)).join('')}
-        </div>
-      </section>
     </div>
   `;
 }
@@ -264,35 +248,28 @@ function renderFinance() {
 function renderReports() {
   const fixedTotals = clientData.finance.fixedTotals.filter((row) => Number(row.amount || 0) !== 0);
   return `
-    <div class="simple-header">
-      <div>
-        <p class="eyebrow">Отчеты из Excel</p>
-        <h2>Что сейчас можно показать заказчику</h2>
-        <p>Это не учетная система и не выдуманные данные. Это визуализация приложенных шаблонов.</p>
-      </div>
-    </div>
-
-    <div class="reports-grid">
-      <section class="panel">
-        <h3>Исходные файлы</h3>
-        <ul class="report-list">
-          ${clientData.sourceFiles.map((file) => `<li>${file}</li>`).join('')}
-        </ul>
-      </section>
-      <section class="panel">
-        <h3>Постоянные платежи: ИТОГО 2026</h3>
-        <div class="bar-list">
-          ${fixedTotals.map((row) => progressRow(row.category, row.amount, 13)).join('')}
+    <div class="screen reports-screen">
+      <div class="simple-header">
+        <div>
+          <p class="eyebrow">Отчеты из Excel</p>
+          <h2>Сводка по файлам</h2>
         </div>
-      </section>
-      <section class="panel">
-        <h3>Логика следующего шага</h3>
-        <ul class="report-list">
-          <li>Подключить реальные заполненные объектные ведомости.</li>
-          <li>Добавить загрузку новых Excel-файлов, когда заказчик будет готов.</li>
-          <li>Собрать PDF-отчет руководителю по тем же показателям.</li>
-        </ul>
-      </section>
+      </div>
+
+      <div class="reports-grid">
+        <section class="panel">
+          <h3>Файлы</h3>
+          <ul class="report-list">
+            ${clientData.sourceFiles.map((file) => `<li>${file}</li>`).join('')}
+          </ul>
+        </section>
+        <section class="panel">
+          <h3>Постоянные платежи: 2026</h3>
+          <div class="bar-list">
+            ${fixedTotals.map((row) => progressRow(row.category, row.amount, 13)).join('')}
+          </div>
+        </section>
+      </div>
     </div>
   `;
 }
@@ -348,7 +325,7 @@ function renderCharts() {
         labels: ['Выручка', 'Исполнитель', 'Расходы', 'Чистая прибыль'],
         datasets: [{
           data: [s.revenue, s.contractorCost, s.grossProfit - s.netProfit, s.netProfit],
-          backgroundColor: ['#6d5dfc', '#8bc5ff', '#ff8fb8', '#20b486'],
+          backgroundColor: ['#050505', '#5f6368', '#a5a5a5', '#d8d8d8'],
           borderRadius: 8,
         }],
       },
@@ -363,7 +340,7 @@ function renderCharts() {
         labels: expenseRows().map(([label]) => label),
         datasets: [{
           data: expenseRows().map(([, value]) => value),
-          backgroundColor: ['#6d5dfc', '#8bc5ff', '#ff8fb8', '#ffc46b', '#20b486', '#9b8cff', '#d8dee9'],
+          backgroundColor: ['#050505', '#333333', '#5c5c5c', '#858585', '#adadad', '#d0d0d0', '#eeeeee'],
           borderWidth: 0,
         }],
       },
@@ -378,8 +355,8 @@ function renderCharts() {
         labels: clientData.finance.fixedMonths.map((row) => row.month),
         datasets: [{
           data: clientData.finance.fixedMonths.map((row) => row.total),
-          borderColor: '#6d5dfc',
-          backgroundColor: 'rgba(109, 93, 252, 0.14)',
+          borderColor: '#050505',
+          backgroundColor: 'rgba(5, 5, 5, 0.08)',
           fill: true,
           tension: 0.35,
         }],
@@ -396,7 +373,7 @@ function renderCharts() {
         labels: ['Стоимость', 'Исполнитель', 'Валовая', 'Итого'],
         datasets: [{
           data: [row.revenue, row.contractorCost, row.grossProfit, row.netProfit],
-          backgroundColor: ['#6d5dfc', '#8bc5ff', '#ffc46b', '#20b486'],
+          backgroundColor: ['#050505', '#5f6368', '#a5a5a5', '#d8d8d8'],
           borderRadius: 8,
         }],
       },
@@ -421,8 +398,8 @@ function chartOptions() {
     maintainAspectRatio: false,
     plugins: { legend: { display: false } },
     scales: {
-      y: { ticks: { callback: (value) => money(value).replace(',00', '') }, grid: { color: '#eef0f6' } },
-      x: { grid: { display: false }, ticks: { maxRotation: 0 } },
+      y: { ticks: { callback: (value) => money(value).replace(',00', ''), color: '#6f6f6f' }, grid: { color: '#eeeeee' } },
+      x: { grid: { display: false }, ticks: { maxRotation: 0, color: '#6f6f6f' } },
     },
   };
 }
@@ -430,7 +407,7 @@ function chartOptions() {
 function donutOptions() {
   return {
     maintainAspectRatio: false,
-    plugins: { legend: { position: 'right', labels: { boxWidth: 10, usePointStyle: true } } },
+    plugins: { legend: { position: 'right', labels: { boxWidth: 10, usePointStyle: true, color: '#111111' } } },
     cutout: '62%',
   };
 }
