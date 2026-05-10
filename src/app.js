@@ -7,6 +7,10 @@ const state = {
 
 let charts = new Map();
 
+const chartPalette = ['#b16d88', '#b06ba6', '#9572cd', '#6e6dc9', '#5b569d', '#474173'];
+const chartGrid = 'rgba(148, 163, 184, 0.25)';
+const chartText = '#5f6b7a';
+
 const pages = [
   ['dashboard', 'Дашборд'],
   ['object', 'Ведомость'],
@@ -60,6 +64,10 @@ function fixedGroupRows() {
   ];
 }
 
+function fixedTotal() {
+  return clientData.finance.fixedMonths.reduce((total, row) => total + Number(row.total || 0), 0);
+}
+
 function renderApp() {
   destroyCharts();
   document.getElementById('appNav').innerHTML = pages.map(([id, label]) => `
@@ -92,7 +100,7 @@ function renderDashboard() {
   const s = clientData.objectSheet.summary;
   const calcRows = clientData.finance.calcRows;
   const calcRevenue = sum(calcRows, 'revenue');
-  const fixedTotal = clientData.finance.fixedMonths.reduce((total, row) => total + Number(row.total || 0), 0);
+  const margin = pct(s.netProfit, s.revenue);
   return `
     <div class="dashboard-screen">
       <div class="dashboard-grid dashboard-slot dashboard-slot--kpi">
@@ -100,29 +108,49 @@ function renderDashboard() {
         ${metricCard('Чистая прибыль', money(s.netProfit), `${number(pct(s.netProfit, s.revenue))}% маржа`, s.netProfit >= 0 ? 'good' : 'bad')}
         ${metricCard('Расходы объекта', money(s.grossProfit - s.netProfit), 'статьи расходов')}
         ${metricCard('Расчет работ', money(calcRevenue), `${calcRows.length} позиции`)}
-        ${metricCard('Постоянные платежи', money(fixedTotal), 'итого за год')}
+        ${metricCard('Постоянные платежи', money(fixedTotal()), 'итого за год')}
       </div>
 
-      <div class="chart-layout dashboard-slot dashboard-slot--charts">
-        <section class="panel chart-panel wide">
+      <div class="dashboard-visuals dashboard-slot dashboard-slot--charts">
+        <section class="panel chart-panel visual-main">
           <div class="panel-title">
             <h3>Структура результата</h3>
           </div>
           <canvas id="resultChart"></canvas>
         </section>
 
-        <section class="panel chart-panel">
+        <section class="panel chart-panel visual-expense">
           <div class="panel-title">
             <h3>Расходы объекта</h3>
           </div>
           <canvas id="expenseChart"></canvas>
         </section>
 
-        <section class="panel chart-panel">
+        <section class="panel ring-panel visual-ring">
+          ${ringCard('Маржа', margin, 100)}
+        </section>
+
+        <section class="panel chart-panel visual-fixed">
           <div class="panel-title">
             <h3>Платежи по месяцам</h3>
           </div>
           <canvas id="fixedChart"></canvas>
+        </section>
+
+        <section class="panel chart-panel visual-workmix">
+          <div class="panel-title">
+            <h3>Расчет работ</h3>
+          </div>
+          <canvas id="workMixChart"></canvas>
+        </section>
+
+        <section class="panel progress-panel visual-fixed-bars">
+          <div class="panel-title">
+            <h3>Постоянные расходы</h3>
+          </div>
+          <div class="bar-list">
+            ${fixedGroupRows().map(([label, value]) => progressRow(label, value, fixedTotal(), 'level-mid')).join('')}
+          </div>
         </section>
       </div>
     </div>
@@ -247,6 +275,7 @@ function renderFinance() {
 
 function renderReports() {
   const fixedTotals = clientData.finance.fixedTotals.filter((row) => Number(row.amount || 0) !== 0);
+  const groups = fixedGroupRows();
   return `
     <div class="screen reports-screen">
       <div class="simple-header">
@@ -257,16 +286,42 @@ function renderReports() {
       </div>
 
       <div class="reports-grid">
-        <section class="panel">
+        <section class="panel source-panel">
           <h3>Файлы</h3>
           <ul class="report-list">
             ${clientData.sourceFiles.map((file) => `<li>${file}</li>`).join('')}
           </ul>
         </section>
-        <section class="panel">
-          <h3>Постоянные платежи: 2026</h3>
-          <div class="bar-list">
-            ${fixedTotals.map((row) => progressRow(row.category, row.amount, 13)).join('')}
+
+        <section class="panel fixed-summary">
+          <div>
+            <p class="eyebrow">Постоянные платежи: 2026</p>
+            <strong>${money(fixedTotal())}</strong>
+            <span>${fixedTotals.length} строк расходов</span>
+          </div>
+          ${ringCard('ЗП', groups[0]?.[1] || 0, fixedTotal())}
+        </section>
+
+        <section class="panel chart-panel fixed-category-panel">
+          <div class="panel-title">
+            <h3>Структура постоянных расходов</h3>
+          </div>
+          <canvas id="fixedCategoryChart"></canvas>
+        </section>
+
+        <section class="panel chart-panel fixed-month-panel">
+          <div class="panel-title">
+            <h3>Помесячная динамика</h3>
+          </div>
+          <canvas id="fixedMonthReportChart"></canvas>
+        </section>
+
+        <section class="panel fixed-list-panel">
+          <div class="panel-title">
+            <h3>Расшифровка</h3>
+          </div>
+          <div class="fixed-list">
+            ${fixedTotals.map((row, index) => progressRow(row.category, row.amount, fixedTotal(), `level-${index % 3 === 0 ? 'high' : index % 3 === 1 ? 'mid' : 'low'}`)).join('')}
           </div>
         </section>
       </div>
@@ -288,12 +343,32 @@ function miniKpi(label, value) {
   return `<div class="mini-kpi"><span>${label}</span><strong>${value}</strong></div>`;
 }
 
-function progressRow(label, value, total) {
+function progressRow(label, value, total, level = 'level-high') {
   const width = Math.max(3, Math.min(100, pct(value, total)));
   return `
     <div class="progress-row">
       <div><span>${label}</span><strong>${money(value)}</strong></div>
-      <div class="progress"><i style="width:${width}%"></i></div>
+      <div class="progress progress-track ${level}"><i class="progress-bar variant-glow" style="width:${width}%"></i></div>
+    </div>
+  `;
+}
+
+function ringCard(label, value, total) {
+  const raw = Math.max(0, Math.min(100, pct(value, total)));
+  const radius = 45;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (raw / 100) * circumference;
+  return `
+    <div class="ring-card bare">
+      <div class="ring-visual">
+        <svg class="ring-svg" viewBox="0 0 112 112" aria-hidden="true">
+          <circle class="ring-track" cx="56" cy="56" r="${radius}"></circle>
+          <circle class="ring-core" cx="56" cy="56" r="34"></circle>
+          <circle class="ring-progress" cx="56" cy="56" r="${radius}" style="stroke-dasharray:${circumference};stroke-dashoffset:${offset}"></circle>
+        </svg>
+        <strong class="ring-value">${number(raw, 0)}%</strong>
+      </div>
+      <span class="ring-name">${label}</span>
     </div>
   `;
 }
@@ -325,7 +400,7 @@ function renderCharts() {
         labels: ['Выручка', 'Исполнитель', 'Расходы', 'Чистая прибыль'],
         datasets: [{
           data: [s.revenue, s.contractorCost, s.grossProfit - s.netProfit, s.netProfit],
-          backgroundColor: ['#050505', '#5f6368', '#a5a5a5', '#d8d8d8'],
+          backgroundColor: chartPalette.slice(0, 4),
           borderRadius: 8,
         }],
       },
@@ -340,8 +415,9 @@ function renderCharts() {
         labels: expenseRows().map(([label]) => label),
         datasets: [{
           data: expenseRows().map(([, value]) => value),
-          backgroundColor: ['#050505', '#333333', '#5c5c5c', '#858585', '#adadad', '#d0d0d0', '#eeeeee'],
-          borderWidth: 0,
+          backgroundColor: chartPalette,
+          borderColor: '#ffffff',
+          borderWidth: 3,
         }],
       },
       options: donutOptions(),
@@ -355,13 +431,37 @@ function renderCharts() {
         labels: clientData.finance.fixedMonths.map((row) => row.month),
         datasets: [{
           data: clientData.finance.fixedMonths.map((row) => row.total),
-          borderColor: '#050505',
-          backgroundColor: 'rgba(5, 5, 5, 0.08)',
+          borderColor: '#9572cd',
+          backgroundColor: 'rgba(149, 114, 205, 0.14)',
           fill: true,
           tension: 0.35,
         }],
       },
       options: chartOptions(),
+    });
+  }
+
+  if (document.getElementById('workMixChart')) {
+    addChart('workMixChart', {
+      type: 'bar',
+      data: {
+        labels: clientData.finance.calcRows.map((row) => short(row.name, 18)),
+        datasets: [
+          {
+            label: 'Выручка',
+            data: clientData.finance.calcRows.map((row) => row.revenue),
+            backgroundColor: '#9572cd',
+            borderRadius: 8,
+          },
+          {
+            label: 'Прибыль',
+            data: clientData.finance.calcRows.map((row) => row.netProfit),
+            backgroundColor: '#b16d88',
+            borderRadius: 8,
+          },
+        ],
+      },
+      options: chartOptions(true),
     });
   }
 
@@ -373,8 +473,44 @@ function renderCharts() {
         labels: ['Стоимость', 'Исполнитель', 'Валовая', 'Итого'],
         datasets: [{
           data: [row.revenue, row.contractorCost, row.grossProfit, row.netProfit],
-          backgroundColor: ['#050505', '#5f6368', '#a5a5a5', '#d8d8d8'],
+          backgroundColor: chartPalette.slice(0, 4),
           borderRadius: 8,
+        }],
+      },
+      options: chartOptions(),
+    });
+  }
+
+  if (document.getElementById('fixedCategoryChart')) {
+    addChart('fixedCategoryChart', {
+      type: 'doughnut',
+      data: {
+        labels: fixedGroupRows().map(([label]) => label),
+        datasets: [{
+          data: fixedGroupRows().map(([, value]) => value),
+          backgroundColor: ['#9572cd', '#b16d88'],
+          borderColor: '#ffffff',
+          borderWidth: 3,
+        }],
+      },
+      options: donutOptions(),
+    });
+  }
+
+  if (document.getElementById('fixedMonthReportChart')) {
+    addChart('fixedMonthReportChart', {
+      type: 'line',
+      data: {
+        labels: clientData.finance.fixedMonths.map((row) => row.month),
+        datasets: [{
+          label: 'Платежи',
+          data: clientData.finance.fixedMonths.map((row) => row.total),
+          borderColor: '#b16d88',
+          backgroundColor: 'rgba(177, 109, 136, 0.16)',
+          fill: true,
+          pointBackgroundColor: '#9572cd',
+          pointRadius: 3,
+          tension: 0.35,
         }],
       },
       options: chartOptions(),
@@ -393,13 +529,13 @@ function destroyCharts() {
   charts.clear();
 }
 
-function chartOptions() {
+function chartOptions(showLegend = false) {
   return {
     maintainAspectRatio: false,
-    plugins: { legend: { display: false } },
+    plugins: { legend: { display: showLegend, labels: { color: chartText, boxWidth: 10, usePointStyle: true } } },
     scales: {
-      y: { ticks: { callback: (value) => money(value).replace(',00', ''), color: '#6f6f6f' }, grid: { color: '#eeeeee' } },
-      x: { grid: { display: false }, ticks: { maxRotation: 0, color: '#6f6f6f' } },
+      y: { ticks: { callback: (value) => money(value).replace(',00', ''), color: chartText }, grid: { color: chartGrid } },
+      x: { grid: { display: false }, ticks: { maxRotation: 0, color: chartText } },
     },
   };
 }
@@ -407,7 +543,12 @@ function chartOptions() {
 function donutOptions() {
   return {
     maintainAspectRatio: false,
-    plugins: { legend: { position: 'right', labels: { boxWidth: 10, usePointStyle: true, color: '#111111' } } },
+    plugins: {
+      legend: {
+        position: 'bottom',
+        labels: { boxWidth: 8, usePointStyle: true, color: chartText, font: { size: 10 } },
+      },
+    },
     cutout: '62%',
   };
 }
