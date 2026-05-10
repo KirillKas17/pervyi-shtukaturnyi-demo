@@ -13,6 +13,7 @@ const chartText = '#5f6b7a';
 
 const pages = [
   ['dashboard', 'Дашборд'],
+  ['analytics', 'Аналитика'],
   ['object', 'Ведомость'],
   ['finance', 'Финансы'],
   ['reports', 'Отчеты'],
@@ -87,6 +88,7 @@ function renderApp() {
   const content = document.getElementById('content');
   content.innerHTML = {
     dashboard: renderDashboard,
+    analytics: renderAnalytics,
     object: renderObjectSheet,
     finance: renderFinance,
     reports: renderReports,
@@ -119,13 +121,6 @@ function renderDashboard() {
           <canvas id="resultChart"></canvas>
         </section>
 
-        <section class="panel chart-panel visual-expense">
-          <div class="panel-title">
-            <h3>Расходы объекта</h3>
-          </div>
-          <canvas id="expenseChart"></canvas>
-        </section>
-
         <section class="panel ring-panel visual-ring">
           ${ringCard('Маржа', margin, 100)}
         </section>
@@ -136,15 +131,37 @@ function renderDashboard() {
           </div>
           <canvas id="fixedChart"></canvas>
         </section>
+      </div>
+    </div>
+  `;
+}
 
-        <section class="panel chart-panel visual-workmix">
+function renderAnalytics() {
+  return `
+    <div class="screen analytics-screen">
+      <div class="analytics-grid">
+        <section class="panel chart-panel analytics-expense">
+          <div class="panel-title">
+            <h3>Расходы объекта</h3>
+          </div>
+          <canvas id="expenseAnalyticsChart"></canvas>
+        </section>
+
+        <section class="panel chart-panel analytics-work">
           <div class="panel-title">
             <h3>Расчет работ</h3>
           </div>
           <canvas id="workMixChart"></canvas>
         </section>
 
-        <section class="panel progress-panel visual-fixed-bars">
+        <section class="panel chart-panel analytics-fixed">
+          <div class="panel-title">
+            <h3>Структура постоянных расходов</h3>
+          </div>
+          <canvas id="fixedGroupAnalyticsChart"></canvas>
+        </section>
+
+        <section class="panel progress-panel analytics-bars">
           <div class="panel-title">
             <h3>Постоянные расходы</h3>
           </div>
@@ -166,7 +183,7 @@ function renderObjectSheet() {
       <div class="simple-header">
         <div>
           <p class="eyebrow">Общая сводная ведомость</p>
-          <h2>${clientData.objectSheet.name}</h2>
+          <h2>Сводная ведомость объекта</h2>
         </div>
         <div class="mini-kpis">
           ${miniKpi('Стоимость ИП Курочкин', money(s.revenue))}
@@ -231,7 +248,7 @@ function renderFinance() {
       <div class="simple-header">
         <div>
           <p class="eyebrow">Расчет стоимости работ</p>
-          <h2>${clientData.finance.name}</h2>
+          <h2>Финансовая модель работ</h2>
         </div>
         <div class="segmented">
           ${calcRows.map((row, index) => `
@@ -280,19 +297,12 @@ function renderReports() {
     <div class="screen reports-screen">
       <div class="simple-header">
         <div>
-          <p class="eyebrow">Отчеты из Excel</p>
-          <h2>Сводка по файлам</h2>
+          <p class="eyebrow">Постоянные платежи</p>
+          <h2>Расходы компании за 2026</h2>
         </div>
       </div>
 
       <div class="reports-grid">
-        <section class="panel source-panel">
-          <h3>Файлы</h3>
-          <ul class="report-list">
-            ${clientData.sourceFiles.map((file) => `<li>${file}</li>`).join('')}
-          </ul>
-        </section>
-
         <section class="panel fixed-summary">
           <div>
             <p class="eyebrow">Постоянные платежи: 2026</p>
@@ -408,8 +418,8 @@ function renderCharts() {
     });
   }
 
-  if (document.getElementById('expenseChart')) {
-    addChart('expenseChart', {
+  if (document.getElementById('expenseAnalyticsChart')) {
+    addChart('expenseAnalyticsChart', {
       type: 'doughnut',
       data: {
         labels: expenseRows().map(([label]) => label),
@@ -497,6 +507,22 @@ function renderCharts() {
     });
   }
 
+  if (document.getElementById('fixedGroupAnalyticsChart')) {
+    addChart('fixedGroupAnalyticsChart', {
+      type: 'doughnut',
+      data: {
+        labels: fixedGroupRows().map(([label]) => label),
+        datasets: [{
+          data: fixedGroupRows().map(([, value]) => value),
+          backgroundColor: ['#9572cd', '#b16d88'],
+          borderColor: '#ffffff',
+          borderWidth: 3,
+        }],
+      },
+      options: donutOptions(),
+    });
+  }
+
   if (document.getElementById('fixedMonthReportChart')) {
     addChart('fixedMonthReportChart', {
       type: 'line',
@@ -559,6 +585,7 @@ function iconFor(id) {
     object: '▤',
     finance: '◌',
     reports: '▣',
+    analytics: '◍',
   };
   return icons[id] || '•';
 }

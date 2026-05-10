@@ -314,7 +314,7 @@ h3 {
 }
 
 .visual-main {
-  grid-column: span 5;
+  grid-column: span 7;
   grid-row: span 2;
 }
 
@@ -323,19 +323,11 @@ h3 {
 }
 
 .visual-ring {
-  grid-column: span 2;
+  grid-column: span 5;
 }
 
 .visual-fixed {
-  grid-column: span 2;
-}
-
-.visual-workmix {
-  grid-column: span 4;
-}
-
-.visual-fixed-bars {
-  grid-column: span 3;
+  grid-column: span 5;
 }
 
 .chart-layout {
@@ -539,10 +531,40 @@ th {
 
 .object-screen,
 .finance-screen,
-.reports-screen {
+.reports-screen,
+.analytics-screen {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
   gap: 14px;
+}
+
+.analytics-screen {
+  grid-template-rows: minmax(0, 1fr);
+}
+
+.analytics-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  min-height: 0;
+}
+
+.analytics-expense {
+  grid-column: span 5;
+  grid-row: span 2;
+}
+
+.analytics-work {
+  grid-column: span 7;
+}
+
+.analytics-fixed {
+  grid-column: span 4;
+}
+
+.analytics-bars {
+  grid-column: span 3;
 }
 
 .work-card {
@@ -627,7 +649,7 @@ th {
 .reports-grid {
   display: grid;
   grid-template-columns: minmax(0, 0.75fr) minmax(0, 1fr) minmax(0, 1fr);
-  grid-template-rows: 150px minmax(0, 1fr);
+  grid-template-rows: 170px minmax(0, 1fr);
   gap: 14px;
   height: 100%;
   min-height: 0;
@@ -637,7 +659,7 @@ th {
   overflow: hidden;
 }
 
-.source-panel {
+.fixed-summary {
   grid-column: 1;
   grid-row: 1;
 }
@@ -662,12 +684,25 @@ th {
 }
 
 .fixed-summary .ring-svg {
-  width: 94px;
-  height: 94px;
+  width: 112px;
+  height: 112px;
 }
 
 .fixed-summary .ring-value {
-  font-size: 20px;
+  font-size: 22px;
+}
+
+.fixed-summary .ring-card {
+  flex: 0 0 118px;
+}
+
+.fixed-summary .ring-name {
+  margin-top: -8px;
+}
+
+.fixed-category-panel {
+  grid-column: 2 / 4;
+  grid-row: 1;
 }
 
 .fixed-month-panel {
@@ -701,6 +736,7 @@ th {
 @media (max-width: 1180px) {
   .dashboard-grid,
   .dashboard-visuals,
+  .analytics-grid,
   .chart-layout,
   .finance-layout,
   .reports-grid,
