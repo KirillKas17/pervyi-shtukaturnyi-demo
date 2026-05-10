@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Первый штукатурный</title>
+  <script src="./vendor/chart.umd.min.js"></script>
+  <script type="module" src="./src/app.js?v=2026-05-10-payments-tabs"></script>
+  <link rel="stylesheet" href="./src/styles.css?v=2026-05-10-payments-tabs">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="brand-mark">1Ш</span>
+        <div>
+          <strong>Первый штукатурный</strong>
+          <span>учет ремонтных объектов</span>
+        </div>
+      </div>
+
+      <nav class="nav" id="appNav"></nav>
+
+      <div class="sidebar-footer">
+        <span>Пилотная версия</span>
+        <strong>2 пользователя</strong>
+      </div>
+    </aside>
+
+    <main class="workspace">
+      <header class="topbar">
+        <div>
+          <p class="section-label" id="sectionLabel">Операционная ветка</p>
+          <h1 id="pageTitle">Объекты ремонта</h1>
+        </div>
+        <div class="topbar-actions">
+          <button class="icon-button" id="seedButton" title="Обновить текущую страницу">↻</button>
+          <button class="primary-button" id="primaryAction">Новый объект</button>
+        </div>
+      </header>
+
+      <section class="content" id="content"></section>
+    </main>
+  </div>
+
+  <div class="modal-backdrop hidden" id="modalBackdrop">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modal-header">
+        <h2 id="modalTitle">Форма</h2>
+        <button class="icon-button" id="closeModal" title="Закрыть">×</button>
+      </div>
+      <form id="modalForm" class="form-grid"></form>
+    </div>
+  </div>
+</body>
+</html>
