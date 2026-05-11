@@ -4,6 +4,7 @@ const state = {
   page: 'overview',
   selectedWork: null,
   objectScope: 'all',
+  overviewPeriod: 'all',
 };
 
 const pages = [
@@ -268,9 +269,6 @@ function renderApp() {
 
   document.getElementById('sectionLabel').textContent = 'BI Analytics';
   document.getElementById('pageTitle').textContent = pages.find(([id]) => id === state.page)?.[1] || 'Обзор';
-  const primary = document.getElementById('primaryAction');
-  primary.textContent = 'Показатели';
-  primary.onclick = () => setPage('overview');
 
   const content = document.getElementById('content');
   content.innerHTML = {
@@ -293,9 +291,9 @@ function renderOverview() {
     <div class="screen dashboard-report overview-screen">
       <section class="scope-row period-row" aria-label="Период отчёта">
         <span>Период</span>
-        <button class="active">Всё время</button>
-        <button>Год</button>
-        <button>Месяц</button>
+        <button class="${state.overviewPeriod === 'all' ? 'active' : ''}" data-overview-period="all">Всё время</button>
+        <button class="${state.overviewPeriod === 'year' ? 'active' : ''}" data-overview-period="year">Год</button>
+        <button class="${state.overviewPeriod === 'month' ? 'active' : ''}" data-overview-period="month">Месяц</button>
       </section>
 
       <section class="kpi-row overview-kpis">
@@ -896,7 +894,12 @@ function bindEvents() {
       renderApp();
     });
   });
-  document.getElementById('seedButton').onclick = renderApp;
+  document.querySelectorAll('[data-overview-period]').forEach((button) => {
+    button.addEventListener('click', () => {
+      state.overviewPeriod = button.dataset.overviewPeriod || 'all';
+      renderApp();
+    });
+  });
 }
 
 function setPage(page) {
@@ -906,27 +909,32 @@ function setPage(page) {
 
 function renderCharts() {
   const s = state.page === 'overview' ? aggregateSummary(knownObjects()) : objectSummary();
+  const overviewSeries = overviewMonthlySeries(s);
 
   addIfPresent('overviewProfitChart', {
     type: 'line',
     data: {
-      labels: overviewRows().slice(0, 25).map((row) => short(row.workName || `Строка ${row.row}`, 12)),
+      labels: overviewSeries.labels,
       datasets: [
         {
           label: 'Выручка',
-          data: overviewRows().slice(0, 25).map((row) => row.revenue),
+          data: overviewSeries.revenue,
           borderColor: gradientBackground(0),
           backgroundColor: areaGradient(0),
           fill: true,
           tension: 0.35,
+          pointRadius: 0,
+          pointHoverRadius: 5,
         },
         {
           label: 'Чистая прибыль',
-          data: overviewRows().slice(0, 25).map((row) => row.grossProfit || row.netProfit),
+          data: overviewSeries.netProfit,
           borderColor: gradientBackground(3),
           backgroundColor: areaGradient(3),
           fill: true,
           tension: 0.35,
+          pointRadius: 0,
+          pointHoverRadius: 5,
         },
       ],
     },
@@ -945,6 +953,8 @@ function renderCharts() {
           backgroundColor: areaGradient(0),
           fill: true,
           tension: 0.3,
+          pointRadius: 0,
+          pointHoverRadius: 5,
         },
         {
           label: 'Прибыль',
@@ -953,6 +963,8 @@ function renderCharts() {
           backgroundColor: areaGradient(1),
           fill: true,
           tension: 0.3,
+          pointRadius: 0,
+          pointHoverRadius: 5,
         },
       ],
     },
@@ -971,13 +983,31 @@ function renderCharts() {
         borderColor: gradientBackground(1),
         backgroundColor: areaGradient(1),
         pointBackgroundColor: '#ffae43',
-        pointRadius: 3,
+        pointRadius: 0,
+        pointHoverRadius: 5,
         fill: true,
         tension: 0.35,
       }],
     },
     options: axisOptions(),
   });
+}
+
+function overviewMonthlySeries(summary) {
+  const months = clientData.finance.fixedMonths.map((row) => row.month);
+  const currentMonthIndex = 4;
+  if (state.overviewPeriod === 'month') {
+    return {
+      labels: [months[currentMonthIndex]],
+      revenue: [summary.revenue],
+      netProfit: [summary.netProfit],
+    };
+  }
+  return {
+    labels: months,
+    revenue: months.map((_, index) => (index === currentMonthIndex ? summary.revenue : 0)),
+    netProfit: months.map((_, index) => (index === currentMonthIndex ? summary.netProfit : 0)),
+  };
 }
 
 function axisOptions(showLegend = false) {
