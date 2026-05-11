@@ -425,13 +425,7 @@ function renderExpenses() {
           <div class="panel-title">
             <h3>Влияние расходов на прибыль</h3>
           </div>
-          ${financeStructureCard([
-            ['Выручка', objectSummary().revenue],
-            ['Валовая прибыль', objectSummary().grossProfit],
-            ['Объектные расходы', objectExpenseTotal()],
-            ['Постоянные платежи', fixedTotal()],
-            ['Чистая прибыль', objectSummary().netProfit],
-          ], objectSummary().netProfit, 'Итог после расходов')}
+          ${profitImpactSplit(objectSummary(), objectExpenseTotal(), fixedTotal())}
         </article>
 
         <article class="panel progress-panel span-3">
@@ -447,14 +441,14 @@ function renderExpenses() {
           <div class="panel-title">
             <h3>Объектные расходы</h3>
           </div>
-          ${peachDonutChart(objectExpenses(), objectExpenseTotal(), 'Итого')}
+          ${peachDonutChart(objectExpenses(), objectExpenseTotal(), 'Итого', 'legend-left')}
         </article>
 
-        <article class="panel progress-panel span-7">
+        <article class="panel donut-panel span-7">
           <div class="panel-title">
             <h3>Расшифровка объекта</h3>
           </div>
-          ${bubbleChart(objectExpenses(), objectExpenseTotal(), 'Сумма', 'Доля', 'expense-bubbles')}
+          ${peachDonutChart(objectExpenses(), objectExpenseTotal(), 'Итого')}
         </article>
       </section>
     </div>
@@ -506,25 +500,18 @@ function renderWorks() {
           ], selected.netProfit, 'Чистая прибыль')}
         </article>
 
-        <article class="panel placeholder-panel span-7">
-          <div class="panel-title">
-            <h3>Следующий блок</h3>
-          </div>
-          <div class="placeholder-copy">Здесь позже добавим дополнительную аналитику по выбранной работе.</div>
-        </article>
-
-        <article class="panel progress-panel span-5">
-          <div class="panel-title">
-            <h3>Сравнение работ</h3>
-          </div>
-          ${bubbleChart(rows.map((row) => [row.name, row.revenue]), sum(rows, 'revenue'), 'Выручка', 'Объём', 'work-bubbles')}
-        </article>
-
         <article class="panel donut-panel span-5">
           <div class="panel-title">
             <h3>Состав расходов</h3>
           </div>
           ${peachDonutChart(costParts, selected.revenue, 'От выручки')}
+        </article>
+
+        <article class="panel progress-panel span-7">
+          <div class="panel-title">
+            <h3>Сравнение работ</h3>
+          </div>
+          ${bubbleChart(rows.map((row) => [row.name, row.revenue]), sum(rows, 'revenue'), 'Выручка', 'Объём', 'work-bubbles')}
         </article>
       </section>
     </div>
@@ -542,21 +529,21 @@ function renderPayments() {
       </section>
 
       <section class="report-grid payments-grid">
-        <article class="panel chart-panel span-7 row-2">
+        <article class="panel chart-panel payment-dynamics">
           <div class="panel-title">
             <h3>Динамика по месяцам</h3>
           </div>
           <canvas id="fixedMonthChart"></canvas>
         </article>
 
-        <article class="panel donut-panel span-5">
+        <article class="panel donut-panel payment-structure">
           <div class="panel-title">
             <h3>Структура платежей</h3>
           </div>
           ${peachDonutChart(fixedGroups(), fixedTotal(), 'Итого')}
         </article>
 
-        <article class="panel progress-panel span-5">
+        <article class="panel progress-panel payment-detail">
           <div class="panel-title">
             <h3>Расшифровка статей</h3>
           </div>
@@ -640,7 +627,7 @@ function financeStructureCard(rows, mainValue, mainLabel) {
   `;
 }
 
-function peachDonutChart(rows, total, centerLabel = 'Итого') {
+function peachDonutChart(rows, total, centerLabel = 'Итого', layout = '') {
   const colors = segmentTriples.map(([top]) => top);
   const safeRows = rows
     .filter(([, value]) => Number(value || 0) > 0)
@@ -660,7 +647,7 @@ function peachDonutChart(rows, total, centerLabel = 'Итого') {
   const centerValue = total ? Math.round(pct(sumValue, total)) : 100;
 
   return `
-    <div class="peach-donut-card">
+    <div class="peach-donut-card ${layout}">
       <div class="peach-chart-wrap">
         <div class="peach-donut" style="background:conic-gradient(from -40deg, ${sectors});">
           <div class="donut-shadow"></div>
@@ -677,6 +664,44 @@ function peachDonutChart(rows, total, centerLabel = 'Итого') {
             <span>${label} ${number(pct(value, sumValue), 0)}%</span>
           </div>
         `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function profitImpactSplit(summary, objectTotal, fixedTotalValue) {
+  const gross = Number(summary.grossProfit || 0);
+  const net = Number(summary.netProfit || 0);
+  const positiveNet = Math.max(0, net);
+  const total = Math.max(positiveNet + objectTotal + fixedTotalValue, gross, 1);
+  const part = (value) => Math.max(5, pct(Math.max(0, value), total));
+
+  return `
+    <div class="profit-split">
+      <div class="split-top">
+        <div class="mini-metric">
+          <span>Выручка</span>
+          <strong>${money(summary.revenue)}</strong>
+        </div>
+        <div class="mini-metric">
+          <span>Валовая прибыль</span>
+          <strong>${money(gross)}</strong>
+        </div>
+      </div>
+      <div class="split-caption">
+        Из валовой прибыли видно, сколько остаётся в чистой и сколько забирают расходы.
+      </div>
+      <div class="decomp-track">
+        <div class="decomp-line">
+          <div class="seg net" style="width:${part(positiveNet)}%;" title="Чистая прибыль: ${money(net)}">Чистая прибыль</div>
+          <div class="seg obj" style="width:${part(objectTotal)}%;" title="Объектные расходы: ${money(objectTotal)}">Объектные</div>
+          <div class="seg fix" style="width:${part(fixedTotalValue)}%;" title="Постоянные платежи: ${money(fixedTotalValue)}">Постоянные</div>
+        </div>
+      </div>
+      <div class="impact-legend">
+        <div><span class="impact-dot net"></span><span>Чистая прибыль</span><strong>${money(net)} • ${number(pct(net, gross))}%</strong></div>
+        <div><span class="impact-dot obj"></span><span>Объектные расходы</span><strong>${money(objectTotal)} • ${number(pct(objectTotal, gross))}%</strong></div>
+        <div><span class="impact-dot fix"></span><span>Постоянные платежи</span><strong>${money(fixedTotalValue)} • ${number(pct(fixedTotalValue, gross))}%</strong></div>
       </div>
     </div>
   `;
