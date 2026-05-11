@@ -376,7 +376,7 @@ function renderObjectAnalysisView() {
       <div class="panel-title">
         <h3>Расходы по статьям</h3>
       </div>
-      <canvas id="objectExpenseChart"></canvas>
+      ${peachDonutChart(objectExpenses(), objectExpenseTotal(), 'Итого')}
     </article>
   `;
 }
@@ -393,18 +393,18 @@ function renderExpenses() {
       </section>
 
       <section class="report-grid expense-grid">
-        <article class="panel chart-panel span-5 row-2">
+        <article class="panel donut-panel span-5 row-2">
           <div class="panel-title">
             <h3>Объектные расходы</h3>
           </div>
-          <canvas id="objectExpenseChart"></canvas>
+          ${peachDonutChart(objectExpenses(), objectExpenseTotal(), 'Итого')}
         </article>
 
-        <article class="panel chart-panel span-4">
+        <article class="panel donut-panel span-4">
           <div class="panel-title">
             <h3>Постоянные расходы</h3>
           </div>
-          <canvas id="fixedGroupChart"></canvas>
+          ${peachDonutChart(fixedGroups(), fixedTotal(), 'Итого')}
         </article>
 
         <article class="panel progress-panel span-3">
@@ -459,11 +459,17 @@ function renderWorks() {
       </section>
 
       <section class="report-grid works-grid">
-        <article class="panel chart-panel span-7">
+        <article class="panel ref-bar-panel span-7">
           <div class="panel-title">
             <h3>Экономика выбранной работы</h3>
           </div>
-          <canvas id="workEconomyChart"></canvas>
+          ${financeStructureCard([
+            ['Выручка', selected.revenue],
+            ['Исполнитель', selected.contractorCost],
+            ['Валовая', selected.grossProfit],
+            ['Расходы', selected.revenue - selected.netProfit],
+            ['Чистая', selected.netProfit],
+          ], selected.netProfit, 'Чистая прибыль')}
         </article>
 
         <article class="panel placeholder-panel span-7">
@@ -480,11 +486,11 @@ function renderWorks() {
           ${bubbleChart(rows.map((row) => [row.name, row.revenue]), sum(rows, 'revenue'), 'Выручка', 'Объём', 'work-bubbles')}
         </article>
 
-        <article class="panel chart-panel span-5">
+        <article class="panel donut-panel span-5">
           <div class="panel-title">
             <h3>Состав расходов</h3>
           </div>
-          <canvas id="workCostPieChart"></canvas>
+          ${peachDonutChart(costParts, selected.revenue, 'От выручки')}
         </article>
       </section>
     </div>
@@ -509,11 +515,11 @@ function renderPayments() {
           <canvas id="fixedMonthChart"></canvas>
         </article>
 
-        <article class="panel chart-panel span-5">
+        <article class="panel donut-panel span-5">
           <div class="panel-title">
             <h3>Структура платежей</h3>
           </div>
-          <canvas id="fixedPieChart"></canvas>
+          ${peachDonutChart(fixedGroups(), fixedTotal(), 'Итого')}
         </article>
 
         <article class="panel progress-panel span-5">
@@ -602,6 +608,48 @@ function financeStructureCard(rows, mainValue, mainLabel) {
           <div class="value">${money(mainValue)}</div>
           <div class="caption">${mainLabel}</div>
         </div>
+      </div>
+    </div>
+  `;
+}
+
+function peachDonutChart(rows, total, centerLabel = 'Итого') {
+  const colors = ['#ff7a4d', '#ffb15f', '#ffe0a3', '#a6e28a', '#ff5b48'];
+  const safeRows = rows
+    .filter(([, value]) => Number(value || 0) > 0)
+    .sort((a, b) => Number(b[1] || 0) - Number(a[1] || 0))
+    .slice(0, 5);
+  const sumValue = safeRows.reduce((acc, [, value]) => acc + Number(value || 0), 0);
+  const base = sumValue || 1;
+  let angle = -40;
+  const sectors = safeRows.length
+    ? safeRows.map(([, value], index) => {
+      const start = angle;
+      const end = angle + (Number(value || 0) / base) * 360;
+      angle = end;
+      return `${colors[index % colors.length]} ${start}deg ${end}deg`;
+    }).join(', ')
+    : '#2a3038 0deg 360deg';
+  const centerValue = total ? Math.round(pct(sumValue, total)) : 100;
+
+  return `
+    <div class="peach-donut-card">
+      <div class="peach-chart-wrap">
+        <div class="peach-donut" style="background:conic-gradient(from -40deg, ${sectors});">
+          <div class="donut-shadow"></div>
+          <div class="peach-center">
+            <div class="peach-value">${centerValue}%</div>
+            <div class="peach-label">${centerLabel}</div>
+          </div>
+        </div>
+      </div>
+      <div class="peach-legend">
+        ${safeRows.map(([label, value], index) => `
+          <div class="peach-legend-item" title="${label}: ${money(value)}">
+            <span class="peach-dot" style="background:${colors[index % colors.length]}"></span>
+            <span>${short(label, 16)} ${number(pct(value, sumValue), 0)}%</span>
+          </div>
+        `).join('')}
       </div>
     </div>
   `;
@@ -737,10 +785,6 @@ function renderCharts() {
     options: axisOptions(true),
   });
 
-  addIfPresent('objectExpenseChart', doughnutConfig(objectExpenses()));
-  addIfPresent('fixedGroupChart', doughnutConfig(fixedGroups()));
-  addIfPresent('fixedPieChart', doughnutConfig(fixedGroups()));
-
   addIfPresent('objectRowsChart', {
     type: 'line',
     data: {
@@ -770,33 +814,6 @@ function renderCharts() {
     ], true),
   });
 
-  const selected = workRows()[state.selectedWork] || workRows()[0];
-  const costParts = [
-    ['Пневмо транспорт', selected.pneumo],
-    ['Зарплата мастер РОР', selected.masterSalary],
-    ['Суточные', selected.daily],
-    ['Проживание', selected.housing],
-    ['Налог', selected.tax],
-    ['Расходники', selected.tools],
-    ['Разнорабочие', selected.laborers],
-    ['Внеплановые', selected.unplanned],
-  ].filter(([, value]) => Number(value || 0) !== 0);
-
-  addIfPresent('workEconomyChart', {
-    type: 'bar',
-    data: {
-      labels: ['Выручка', 'Исполнитель', 'Валовая', 'Итого'],
-      datasets: [{
-        data: [selected.revenue, selected.contractorCost, selected.grossProfit, selected.netProfit],
-        backgroundColor: indexedGradient(true),
-        borderRadius: 9,
-      }],
-    },
-    options: axisOptions(),
-  });
-
-  addIfPresent('workCostPieChart', doughnutConfig(costParts));
-
   addIfPresent('fixedMonthChart', {
     type: 'line',
     data: {
@@ -813,31 +830,6 @@ function renderCharts() {
     },
     options: axisOptions(),
   });
-}
-
-function doughnutConfig(rows) {
-  return {
-    type: 'doughnut',
-    data: {
-      labels: rows.map(([label]) => label),
-      datasets: [{
-        data: rows.map(([, value]) => value),
-        backgroundColor: indexedGradient(),
-        borderColor: '#151820',
-        borderWidth: 3,
-      }],
-    },
-    options: {
-      maintainAspectRatio: false,
-      cutout: '58%',
-      plugins: {
-        legend: {
-          position: 'bottom',
-          labels: { color: chartText, usePointStyle: true, boxWidth: 8, font: { size: 10 } },
-        },
-      },
-    },
-  };
 }
 
 function axisOptions(showLegend = false) {
