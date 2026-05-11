@@ -105,6 +105,17 @@ function areaGradient(index = 0) {
   };
 }
 
+function paddedLineOptions(values, showLegend = true) {
+  const options = axisOptions(showLegend);
+  const numeric = values.map((value) => Number(value || 0));
+  const min = Math.min(...numeric, 0);
+  const max = Math.max(...numeric, 1);
+  const pad = Math.max((max - min) * 0.18, max * 0.08, 1);
+  options.scales.y.suggestedMin = Math.max(0, min - pad);
+  options.scales.y.suggestedMax = max + pad;
+  return options;
+}
+
 function knownObjects() {
   return [
     {
@@ -199,13 +210,19 @@ function objectRows() {
     .filter((row) => row.revenue || row.contractorCost || row.grossProfit || row.netProfit);
 }
 
-function reportMetrics() {
-  const s = objectSummary();
+function overviewRows() {
+  return knownObjects()
+    .flatMap((object) => object.rows.map((row) => ({ ...row, objectName: object.name, objectId: object.id })))
+    .filter((row) => row.revenue || row.contractorCost || row.grossProfit || row.netProfit);
+}
+
+function reportMetrics(summary = objectSummary(), expenseTotal = objectExpenseTotal()) {
+  const s = summary;
   return [
     ['Выручка', s.revenue, 'Основная экономика'],
     ['Стоимость исполнителя', s.contractorCost, 'Основная экономика'],
     ['Валовая прибыль', s.grossProfit, 'Основная экономика'],
-    ['Расходы по статьям', objectExpenseTotal(), 'Расходы'],
+    ['Расходы по статьям', expenseTotal, 'Расходы'],
     ['Налоги', s.tax, 'Расходы'],
     ['Чистая прибыль', s.netProfit, 'Итог'],
     ['Маржа', pct(s.netProfit, s.revenue), 'Итог', 'percent'],
@@ -241,35 +258,46 @@ function renderApp() {
 }
 
 function renderOverview() {
-  const s = objectSummary();
+  const s = aggregateSummary(knownObjects());
   const margin = pct(s.netProfit, s.revenue);
+  const expenseTotal = s.advance + s.tools + s.customerExpenses + s.tax + s.housing + s.laborers + s.unplanned;
   return `
-    <div class="screen dashboard-report">
-      ${renderObjectScope()}
-      <section class="kpi-row">
-        ${kpiCard('Выручка', money(s.revenue), activeScopeLabel())}
+    <div class="screen dashboard-report overview-screen">
+      <section class="scope-row period-row" aria-label="Период отчёта">
+        <span>Период</span>
+        <button class="active">Всё время</button>
+        <button>Год</button>
+        <button>Месяц</button>
+      </section>
+
+      <section class="kpi-row overview-kpis">
+        ${kpiCard('Выручка', money(s.revenue), 'Все объекты')}
         ${kpiCard('Валовая прибыль', money(s.grossProfit), `${number(pct(s.grossProfit, s.revenue))}% от выручки`)}
         ${kpiCard('Чистая прибыль', money(s.netProfit), `${number(margin)}% маржа`)}
-        ${kpiCard('Работ в ведомости', number(objectRows().length, 0), 'строки выбранного среза')}
+        ${kpiCard('Работ в ведомости', number(overviewRows().length, 0), 'строки выбранного среза')}
+        ${kpiCard('Маржа', `${number(margin)}%`, 'чистая прибыль / выручка')}
       </section>
 
       <section class="report-grid overview-grid">
-        <article class="panel chart-panel span-6 row-2">
+        <article class="panel chart-panel span-5">
           <div class="panel-title">
             <h3>Финансовая структура</h3>
           </div>
           <canvas id="overviewResultChart"></canvas>
         </article>
 
-        <article class="panel metric-table span-4 row-2">
+        <article class="panel chart-panel span-4">
+          <div class="panel-title">
+            <h3>Выручка и чистая прибыль</h3>
+          </div>
+          <canvas id="overviewProfitChart"></canvas>
+        </article>
+
+        <article class="panel metric-table span-3">
           <div class="panel-title">
             <h3>Метрики из ведомости</h3>
           </div>
-          ${metricTable(reportMetrics())}
-        </article>
-
-        <article class="panel ring-panel span-2 row-2">
-          ${ringCard('Маржа', margin)}
+          ${metricTable(reportMetrics(s, expenseTotal))}
         </article>
       </section>
     </div>
@@ -325,14 +353,14 @@ function renderObjectAnalysisView() {
       <canvas id="objectRowsChart"></canvas>
     </article>
 
-    <article class="panel chart-panel span-3 row-2">
+    <article class="panel chart-panel span-6">
       <div class="panel-title">
         <h3>Финансовая структура</h3>
       </div>
       <canvas id="objectFinancialMixChart"></canvas>
     </article>
 
-    <article class="panel chart-panel span-3 row-2">
+    <article class="panel chart-panel span-6">
       <div class="panel-title">
         <h3>Расходы по статьям</h3>
       </div>
@@ -380,9 +408,7 @@ function renderExpenses() {
           <div class="panel-title">
             <h3>Расшифровка объекта</h3>
           </div>
-          <div class="progress-stack compact">
-            ${objectExpenses().map(([label, value], index) => progressRow(label, value, objectSummary().revenue, index)).join('')}
-          </div>
+          ${bubbleChart(objectExpenses(), objectExpenseTotal(), 'Сумма', 'Доля', 'expense-bubbles')}
         </article>
       </section>
     </div>
@@ -421,27 +447,32 @@ function renderWorks() {
       </section>
 
       <section class="report-grid works-grid">
-        <article class="panel chart-panel span-7 row-2">
+        <article class="panel chart-panel span-7">
           <div class="panel-title">
             <h3>Экономика выбранной работы</h3>
           </div>
           <canvas id="workEconomyChart"></canvas>
         </article>
 
-        <article class="panel chart-panel span-5">
+        <article class="panel placeholder-panel span-7">
           <div class="panel-title">
-            <h3>Сравнение работ</h3>
+            <h3>Следующий блок</h3>
           </div>
-          <canvas id="workCompareChart"></canvas>
+          <div class="placeholder-copy">Здесь позже добавим дополнительную аналитику по выбранной работе.</div>
         </article>
 
         <article class="panel progress-panel span-5">
           <div class="panel-title">
+            <h3>Сравнение работ</h3>
+          </div>
+          ${bubbleChart(rows.map((row) => [row.name, row.revenue]), sum(rows, 'revenue'), 'Выручка', 'Объём', 'work-bubbles')}
+        </article>
+
+        <article class="panel chart-panel span-5">
+          <div class="panel-title">
             <h3>Состав расходов</h3>
           </div>
-          <div class="progress-stack compact">
-            ${costParts.map(([label, value], index) => progressRow(label, value, selected.revenue, index)).join('')}
-          </div>
+          <canvas id="workCostPieChart"></canvas>
         </article>
       </section>
     </div>
@@ -477,9 +508,7 @@ function renderPayments() {
           <div class="panel-title">
             <h3>Расшифровка статей</h3>
           </div>
-          <div class="progress-stack compact">
-            ${fixedItems().map((row, index) => progressRow(row.category, row.amount, fixedTotal(), index)).join('')}
-          </div>
+          ${bubbleChart(fixedItems().map((row) => [row.category, row.amount]), fixedTotal(), 'Сумма', 'Доля', 'payment-bubbles')}
         </article>
       </section>
     </div>
@@ -520,6 +549,50 @@ function progressRow(label, value, total, index = 0) {
       </div>
       <div class="progress-track">
         <i style="width:${width}%;background:${gradientCss(index)}"></i>
+      </div>
+    </div>
+  `;
+}
+
+function bubbleChart(rows, total, yLabel = 'Сумма', xLabel = 'Доля', className = '') {
+  const safeRows = rows
+    .filter(([, value]) => Number(value || 0) > 0)
+    .sort((a, b) => Number(b[1] || 0) - Number(a[1] || 0))
+    .slice(0, 8);
+  const max = Math.max(...safeRows.map(([, value]) => Number(value || 0)), 1);
+  const colors = ['coral', 'peach', 'apricot', 'olive', 'muted', 'blue'];
+  const positions = [
+    [72, 34],
+    [55, 48],
+    [38, 58],
+    [81, 62],
+    [27, 76],
+    [18, 38],
+    [62, 76],
+    [44, 28],
+  ];
+
+  return `
+    <div class="bubble-map ${className}">
+      <div class="zone one"></div>
+      <div class="zone two"></div>
+      <div class="soft-axis-x"></div>
+      <div class="soft-axis-y"></div>
+      <div class="axis-caption y">${yLabel}</div>
+      <div class="axis-caption x">${xLabel}</div>
+      ${safeRows.map(([label, value], index) => {
+        const size = Number(value || 0) / max;
+        const sizeClass = size > 0.72 ? 'big' : size > 0.42 ? 'medium' : size > 0.22 ? 'small' : 'tiny';
+        const [left, top] = positions[index % positions.length];
+        return `
+          <div class="bubble ${colors[index % colors.length]} ${sizeClass}" style="left:${left}%;top:${top}%;" title="${label}: ${money(value)}">
+            <span>${short(label, 14)}<small>${money(value)}</small></span>
+          </div>
+        `;
+      }).join('')}
+      <div class="bubble-summary">
+        <span>Итого</span>
+        <strong>${money(total)}</strong>
       </div>
     </div>
   `;
@@ -583,19 +656,48 @@ function setPage(page) {
 }
 
 function renderCharts() {
-  const s = objectSummary();
+  const s = state.page === 'overview' ? aggregateSummary(knownObjects()) : objectSummary();
+  const currentExpenseTotal = state.page === 'overview'
+    ? s.advance + s.tools + s.customerExpenses + s.tax + s.housing + s.laborers + s.unplanned
+    : objectExpenseTotal();
 
   addIfPresent('overviewResultChart', {
     type: 'bar',
     data: {
       labels: ['Выручка', 'Исполнитель', 'Валовая', 'Расходы', 'Чистая'],
       datasets: [{
-        data: [s.revenue, s.contractorCost, s.grossProfit, objectExpenseTotal(), s.netProfit],
+        data: [s.revenue, s.contractorCost, s.grossProfit, currentExpenseTotal, s.netProfit],
         backgroundColor: indexedGradient(true),
         borderRadius: 9,
       }],
     },
     options: axisOptions(),
+  });
+
+  addIfPresent('overviewProfitChart', {
+    type: 'line',
+    data: {
+      labels: overviewRows().slice(0, 25).map((row) => short(row.workName || `Строка ${row.row}`, 12)),
+      datasets: [
+        {
+          label: 'Выручка',
+          data: overviewRows().slice(0, 25).map((row) => row.revenue),
+          borderColor: gradientBackground(0),
+          backgroundColor: areaGradient(0),
+          fill: true,
+          tension: 0.35,
+        },
+        {
+          label: 'Чистая прибыль',
+          data: overviewRows().slice(0, 25).map((row) => row.grossProfit || row.netProfit),
+          borderColor: gradientBackground(3),
+          backgroundColor: areaGradient(3),
+          fill: true,
+          tension: 0.35,
+        },
+      ],
+    },
+    options: axisOptions(true),
   });
 
   addIfPresent('objectExpenseChart', doughnutConfig(objectExpenses()));
@@ -607,7 +709,7 @@ function renderCharts() {
     data: {
       labels: ['Выручка', 'Исполнитель', 'Валовая', 'Расходы', 'Чистая'],
       datasets: [{
-        data: [s.revenue, s.contractorCost, s.grossProfit, objectExpenseTotal(), s.netProfit],
+        data: [s.revenue, s.contractorCost, s.grossProfit, currentExpenseTotal, s.netProfit],
         backgroundColor: indexedGradient(true),
         borderRadius: 8,
       }],
@@ -638,10 +740,24 @@ function renderCharts() {
         },
       ],
     },
-    options: axisOptions(true),
+    options: paddedLineOptions([
+      ...objectRows().slice(0, 25).map((row) => row.revenue),
+      ...objectRows().slice(0, 25).map((row) => row.grossProfit || row.netProfit),
+    ], true),
   });
 
   const selected = workRows()[state.selectedWork] || workRows()[0];
+  const costParts = [
+    ['Пневмо транспорт', selected.pneumo],
+    ['Зарплата мастер РОР', selected.masterSalary],
+    ['Суточные', selected.daily],
+    ['Проживание', selected.housing],
+    ['Налог', selected.tax],
+    ['Расходники', selected.tools],
+    ['Разнорабочие', selected.laborers],
+    ['Внеплановые', selected.unplanned],
+  ].filter(([, value]) => Number(value || 0) !== 0);
+
   addIfPresent('workEconomyChart', {
     type: 'bar',
     data: {
@@ -655,17 +771,7 @@ function renderCharts() {
     options: axisOptions(),
   });
 
-  addIfPresent('workCompareChart', {
-    type: 'bar',
-    data: {
-      labels: workRows().map((row) => short(row.name, 18)),
-      datasets: [
-        { label: 'Выручка', data: workRows().map((row) => row.revenue), backgroundColor: gradientBackground(0, true), borderRadius: 8 },
-        { label: 'Прибыль', data: workRows().map((row) => row.netProfit), backgroundColor: gradientBackground(1, true), borderRadius: 8 },
-      ],
-    },
-    options: axisOptions(true),
-  });
+  addIfPresent('workCostPieChart', doughnutConfig(costParts));
 
   addIfPresent('fixedMonthChart', {
     type: 'line',
