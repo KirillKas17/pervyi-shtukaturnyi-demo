@@ -14,7 +14,15 @@ const pages = [
   ['payments', 'Платежи'],
 ];
 
-const palette = ['#7c5ce3', '#b16d88', '#5d6fd3', '#b06ba6', '#4c4f82', '#d8c8ff'];
+const gradientPairs = [
+  { from: '#2CC4EA', to: '#533885' },
+  { from: '#FF55C2', to: '#7222E3' },
+  { from: '#FFBC73', to: '#FF00B9' },
+  { from: '#46FFAB', to: '#A02EFF' },
+  { from: '#1D5BFF', to: '#C7FF17' },
+  { from: '#DD1FFF', to: '#24D8FB' },
+];
+const palette = gradientPairs.map((pair) => pair.from);
 const chartText = '#5f6b7a';
 const chartGrid = 'rgba(148, 163, 184, 0.24)';
 let charts = new Map();
@@ -42,6 +50,60 @@ function sum(rows, key) {
 function short(text, limit = 46) {
   const value = String(text || '');
   return value.length > limit ? `${value.slice(0, limit - 1)}…` : value;
+}
+
+function gradientPair(index = 0) {
+  return gradientPairs[index % gradientPairs.length];
+}
+
+function gradientCss(index = 0) {
+  const pair = gradientPair(index);
+  return `linear-gradient(90deg, ${pair.from}, ${pair.to})`;
+}
+
+function hexToRgba(hex, alpha) {
+  const value = hex.replace('#', '');
+  const bigint = parseInt(value, 16);
+  const r = (bigint >> 16) & 255;
+  const g = (bigint >> 8) & 255;
+  const b = bigint & 255;
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+function chartGradient(context, index = 0, vertical = false) {
+  const chart = context.chart || context;
+  const pair = gradientPair(index);
+  const area = chart.chartArea;
+  if (!chart.ctx || !area) return pair.from;
+
+  const gradient = vertical
+    ? chart.ctx.createLinearGradient(0, area.bottom, 0, area.top)
+    : chart.ctx.createLinearGradient(area.left, 0, area.right, 0);
+  gradient.addColorStop(0, pair.from);
+  gradient.addColorStop(1, pair.to);
+  return gradient;
+}
+
+function indexedGradient(vertical = false) {
+  return (context) => chartGradient(context, context.dataIndex || 0, vertical);
+}
+
+function gradientBackground(index = 0, vertical = false) {
+  return (context) => chartGradient(context, index, vertical);
+}
+
+function areaGradient(index = 0) {
+  return (context) => {
+    const chart = context.chart || context;
+    const pair = gradientPair(index);
+    const area = chart.chartArea;
+    if (!chart.ctx || !area) return hexToRgba(pair.from, 0.16);
+
+    const gradient = chart.ctx.createLinearGradient(0, area.top, 0, area.bottom);
+    gradient.addColorStop(0, hexToRgba(pair.to, 0.26));
+    gradient.addColorStop(1, hexToRgba(pair.from, 0.04));
+    return gradient;
+  };
 }
 
 function knownObjects() {
@@ -478,7 +540,7 @@ function progressRow(label, value, total, index = 0) {
         <strong>${money(value)}</strong>
       </div>
       <div class="progress-track">
-        <i style="width:${width}%;background:${palette[index % palette.length]}"></i>
+        <i style="width:${width}%;background:${gradientCss(index)}"></i>
       </div>
     </div>
   `;
@@ -493,6 +555,12 @@ function ringCard(label, value) {
     <div class="ring-card">
       <div class="ring-visual">
         <svg class="ring-svg" viewBox="0 0 112 112" aria-hidden="true">
+          <defs>
+            <linearGradient id="ringGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#FF55C2"></stop>
+              <stop offset="100%" stop-color="#7222E3"></stop>
+            </linearGradient>
+          </defs>
           <circle class="ring-track" cx="56" cy="56" r="${radius}"></circle>
           <circle class="ring-core" cx="56" cy="56" r="34"></circle>
           <circle class="ring-progress" cx="56" cy="56" r="${radius}" style="stroke-dasharray:${circumference};stroke-dashoffset:${offset}"></circle>
@@ -544,7 +612,7 @@ function renderCharts() {
       labels: ['Выручка', 'Исполнитель', 'Валовая', 'Расходы', 'Чистая'],
       datasets: [{
         data: [s.revenue, s.contractorCost, s.grossProfit, objectExpenseTotal(), s.netProfit],
-        backgroundColor: palette.slice(0, 5),
+        backgroundColor: indexedGradient(true),
         borderRadius: 9,
       }],
     },
@@ -561,7 +629,7 @@ function renderCharts() {
       labels: ['Выручка', 'Исполнитель', 'Валовая', 'Расходы', 'Чистая'],
       datasets: [{
         data: [s.revenue, s.contractorCost, s.grossProfit, objectExpenseTotal(), s.netProfit],
-        backgroundColor: palette.slice(0, 5),
+        backgroundColor: indexedGradient(true),
         borderRadius: 8,
       }],
     },
@@ -576,16 +644,16 @@ function renderCharts() {
         {
           label: 'Выручка',
           data: objectRows().slice(0, 25).map((row) => row.revenue),
-          borderColor: palette[0],
-          backgroundColor: 'rgba(124, 92, 227, 0.12)',
+          borderColor: gradientBackground(0),
+          backgroundColor: areaGradient(0),
           fill: true,
           tension: 0.3,
         },
         {
           label: 'Прибыль',
           data: objectRows().slice(0, 25).map((row) => row.grossProfit || row.netProfit),
-          borderColor: palette[1],
-          backgroundColor: 'rgba(177, 109, 136, 0.1)',
+          borderColor: gradientBackground(1),
+          backgroundColor: areaGradient(1),
           fill: true,
           tension: 0.3,
         },
@@ -602,13 +670,13 @@ function renderCharts() {
         {
           label: 'Проект',
           data: topRowsBy('revenue', 6).map((row) => row.plannedQty),
-          backgroundColor: palette[2],
+          backgroundColor: gradientBackground(2, true),
           borderRadius: 7,
         },
         {
           label: 'Факт',
           data: topRowsBy('revenue', 6).map((row) => row.actualQty),
-          backgroundColor: palette[0],
+          backgroundColor: gradientBackground(0, true),
           borderRadius: 7,
         },
       ],
@@ -623,7 +691,7 @@ function renderCharts() {
       datasets: [{
         label: 'Прибыль',
         data: topRowsBy('grossProfit', 6).map((row) => row.grossProfit || row.netProfit),
-        backgroundColor: palette[1],
+        backgroundColor: indexedGradient(true),
         borderRadius: 7,
       }],
     },
@@ -637,7 +705,7 @@ function renderCharts() {
       labels: ['Выручка', 'Исполнитель', 'Валовая', 'Итого'],
       datasets: [{
         data: [selected.revenue, selected.contractorCost, selected.grossProfit, selected.netProfit],
-        backgroundColor: palette.slice(0, 4),
+        backgroundColor: indexedGradient(true),
         borderRadius: 9,
       }],
     },
@@ -649,8 +717,8 @@ function renderCharts() {
     data: {
       labels: workRows().map((row) => short(row.name, 18)),
       datasets: [
-        { label: 'Выручка', data: workRows().map((row) => row.revenue), backgroundColor: palette[0], borderRadius: 8 },
-        { label: 'Прибыль', data: workRows().map((row) => row.netProfit), backgroundColor: palette[1], borderRadius: 8 },
+        { label: 'Выручка', data: workRows().map((row) => row.revenue), backgroundColor: gradientBackground(0, true), borderRadius: 8 },
+        { label: 'Прибыль', data: workRows().map((row) => row.netProfit), backgroundColor: gradientBackground(1, true), borderRadius: 8 },
       ],
     },
     options: axisOptions(true),
@@ -662,8 +730,8 @@ function renderCharts() {
       labels: clientData.finance.fixedMonths.map((row) => row.month),
       datasets: [{
         data: clientData.finance.fixedMonths.map((row) => row.total),
-        borderColor: palette[1],
-        backgroundColor: 'rgba(177, 109, 136, 0.16)',
+        borderColor: gradientBackground(1),
+        backgroundColor: areaGradient(1),
         pointBackgroundColor: palette[0],
         pointRadius: 3,
         fill: true,
@@ -681,7 +749,7 @@ function doughnutConfig(rows) {
       labels: rows.map(([label]) => label),
       datasets: [{
         data: rows.map(([, value]) => value),
-        backgroundColor: rows.map((_, index) => palette[index % palette.length]),
+        backgroundColor: indexedGradient(),
         borderColor: '#ffffff',
         borderWidth: 3,
       }],
