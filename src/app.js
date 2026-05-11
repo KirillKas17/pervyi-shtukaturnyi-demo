@@ -15,15 +15,15 @@ const pages = [
 ];
 
 const gradientPairs = [
-  { from: '#4B4962', to: '#1F1D36' },
-  { from: '#FF6383', to: '#E94560' },
-  { from: '#FFE895', to: '#FFBD69' },
-  { from: '#69E4D9', to: '#4FD3C4' },
-  { from: '#F9FEFF', to: '#E8F9FD' },
+  { from: '#ff9f3f', to: '#ff3f6e' },
+  { from: '#ff3f6e', to: '#ff5d7a' },
+  { from: '#ffd451', to: '#ff9f3f' },
+  { from: '#7de05b', to: '#ffd451' },
+  { from: '#4e8cff', to: '#ff5d7a' },
 ];
 const palette = gradientPairs.map((pair) => pair.from);
-const chartText = '#5f6b7a';
-const chartGrid = 'rgba(148, 163, 184, 0.24)';
+const chartText = 'rgba(255, 255, 255, 0.58)';
+const chartGrid = 'rgba(255, 255, 255, 0.105)';
 let charts = new Map();
 
 function money(value) {
@@ -556,8 +556,8 @@ function ringCard(label, value) {
         <svg class="ring-svg" viewBox="0 0 112 112" aria-hidden="true">
           <defs>
             <linearGradient id="ringGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stop-color="#69E4D9"></stop>
-              <stop offset="100%" stop-color="#4FD3C4"></stop>
+              <stop offset="0%" stop-color="#ff3f6e"></stop>
+              <stop offset="100%" stop-color="#ff5d7a"></stop>
             </linearGradient>
           </defs>
           <circle class="ring-track" cx="56" cy="56" r="${radius}"></circle>
@@ -731,7 +731,7 @@ function renderCharts() {
         data: clientData.finance.fixedMonths.map((row) => row.total),
         borderColor: gradientBackground(1),
         backgroundColor: areaGradient(1),
-        pointBackgroundColor: palette[0],
+        pointBackgroundColor: '#ffffff',
         pointRadius: 3,
         fill: true,
         tension: 0.35,
@@ -749,7 +749,7 @@ function doughnutConfig(rows) {
       datasets: [{
         data: rows.map(([, value]) => value),
         backgroundColor: indexedGradient(),
-        borderColor: '#ffffff',
+        borderColor: '#151820',
         borderWidth: 3,
       }],
     },
