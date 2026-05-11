@@ -421,14 +421,14 @@ function renderExpenses() {
       </section>
 
       <section class="report-grid expense-grid">
-        <article class="panel ref-bar-panel span-5 row-2">
+        <article class="panel ref-bar-panel expense-impact">
           <div class="panel-title">
             <h3>Влияние расходов на прибыль</h3>
           </div>
           ${profitImpactSplit(objectSummary(), objectExpenseTotal(), fixedTotal())}
         </article>
 
-        <article class="panel progress-panel span-3">
+        <article class="panel progress-panel expense-groups">
           <div class="panel-title">
             <h3>Группы платежей</h3>
           </div>
@@ -437,14 +437,14 @@ function renderExpenses() {
           </div>
         </article>
 
-        <article class="panel donut-panel span-4">
+        <article class="panel donut-panel expense-object">
           <div class="panel-title">
             <h3>Объектные расходы</h3>
           </div>
           ${peachDonutChart(objectExpenses(), objectExpenseTotal(), 'Итого', 'legend-left')}
         </article>
 
-        <article class="panel donut-panel span-7">
+        <article class="panel donut-panel expense-detail">
           <div class="panel-title">
             <h3>Расшифровка объекта</h3>
           </div>
@@ -504,7 +504,7 @@ function renderWorks() {
           <div class="panel-title">
             <h3>Состав расходов</h3>
           </div>
-          ${peachDonutChart(costParts, selected.revenue, 'От выручки')}
+          ${peachDonutChart(costParts, selected.revenue, 'От выручки', 'legend-left')}
         </article>
 
         <article class="panel progress-panel span-7">

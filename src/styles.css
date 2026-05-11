@@ -545,6 +545,31 @@ h3 {
   grid-row: 1 / 3;
 }
 
+.report-grid.expense-grid {
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+}
+
+.expense-impact {
+  grid-column: 1 / 8;
+  grid-row: 1;
+}
+
+.expense-groups {
+  grid-column: 1 / 8;
+  grid-row: 2;
+}
+
+.expense-object {
+  grid-column: 8 / 13;
+  grid-row: 1;
+}
+
+.expense-detail {
+  grid-column: 8 / 13;
+  grid-row: 2;
+}
+
 .report-grid.payments-grid {
   grid-template-columns: repeat(12, minmax(0, 1fr));
   grid-template-rows: repeat(2, minmax(0, 1fr));
@@ -849,15 +874,19 @@ h3 {
 
 .profit-split {
   display: grid;
-  grid-template-rows: auto auto auto minmax(0, 1fr);
-  gap: 12px;
+  grid-template-columns: 0.8fr 1.2fr;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 10px 14px;
   height: calc(100% - 36px);
   min-height: 0;
 }
 
 .split-top {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-column: 1;
+  grid-row: 1 / 3;
+  align-content: start;
+  grid-template-columns: 1fr;
   gap: 10px;
 }
 
@@ -883,12 +912,17 @@ h3 {
 }
 
 .split-caption {
+  grid-column: 2;
+  grid-row: 1;
   color: var(--muted);
   font-size: 12px;
   line-height: 1.35;
 }
 
 .decomp-track {
+  grid-column: 2;
+  grid-row: 2;
+  align-self: start;
   height: 34px;
   padding: 4px;
   overflow: hidden;
@@ -933,10 +967,14 @@ h3 {
 }
 
 .impact-legend {
+  grid-column: 2;
+  grid-row: 2;
+  align-self: end;
   display: flex;
   flex-direction: column;
-  gap: 9px;
+  gap: 7px;
   min-height: 0;
+  max-height: 86px;
   overflow: hidden auto;
 }
 
