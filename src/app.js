@@ -14,12 +14,26 @@ const pages = [
   ['payments', 'Платежи'],
 ];
 
+const visualTriples = [
+  ['#ffae43', '#ff5a45', '#b91934'],
+  ['#ff9b43', '#f05a42', '#c92539'],
+  ['#ffc04e', '#ff8845', '#d0383a'],
+  ['#e6c94b', '#ba9c3f', '#60743d'],
+  ['#efc653', '#c6a64b', '#657a40'],
+  ['#ffd879', '#b98b43', '#6f4f35'],
+  ['#ff7d55', '#d64d3f', '#7f2a32'],
+  ['#d4d968', '#8f9a47', '#47583a'],
+];
+
 const gradientPairs = [
-  { from: '#ff9f3f', to: '#ff3f6e' },
-  { from: '#ff3f6e', to: '#ff5d7a' },
-  { from: '#ffd451', to: '#ff9f3f' },
-  { from: '#7de05b', to: '#ffd451' },
-  { from: '#4e8cff', to: '#ff5d7a' },
+  { from: visualTriples[0][0], to: visualTriples[0][2] },
+  { from: visualTriples[1][0], to: visualTriples[1][2] },
+  { from: visualTriples[2][0], to: visualTriples[2][2] },
+  { from: visualTriples[3][0], to: visualTriples[3][2] },
+  { from: visualTriples[4][0], to: visualTriples[4][2] },
+  { from: visualTriples[5][0], to: visualTriples[5][2] },
+  { from: visualTriples[6][0], to: visualTriples[6][2] },
+  { from: visualTriples[7][0], to: visualTriples[7][2] },
 ];
 const palette = gradientPairs.map((pair) => pair.from);
 const chartText = 'rgba(255, 255, 255, 0.58)';
@@ -574,19 +588,12 @@ function progressRow(label, value, total, index = 0) {
 
 function financeStructureCard(rows, mainValue, mainLabel) {
   const max = Math.max(...rows.map(([, value]) => Number(value || 0)), 1);
-  const barColors = [
-    ['#ffae43', '#ff5a45', '#b91934'],
-    ['#ff9b43', '#f05a42', '#c92539'],
-    ['#ffc04e', '#ff8845', '#d0383a'],
-    ['#e6c94b', '#ba9c3f', '#60743d'],
-    ['#efc653', '#c6a64b', '#657a40'],
-  ];
   return `
     <div class="ref-chart">
       <div class="ref-bars">
         ${rows.map(([label, value], index) => {
           const height = Math.max(10, Math.min(96, (Number(value || 0) / max) * 92));
-          const colors = barColors[index % barColors.length];
+          const colors = visualTriples[index % visualTriples.length];
           return `
             <div class="ref-bar-item">
               <div class="ref-bar-track">
@@ -614,7 +621,7 @@ function financeStructureCard(rows, mainValue, mainLabel) {
 }
 
 function peachDonutChart(rows, total, centerLabel = 'Итого') {
-  const colors = ['#ff7a4d', '#ffb15f', '#ffe0a3', '#a6e28a', '#ff5b48'];
+  const colors = visualTriples.map(([top]) => top);
   const safeRows = rows
     .filter(([, value]) => Number(value || 0) > 0)
     .sort((a, b) => Number(b[1] || 0) - Number(a[1] || 0))
@@ -661,7 +668,7 @@ function bubbleChart(rows, total, yLabel = 'Сумма', xLabel = 'Доля', cl
     .sort((a, b) => Number(b[1] || 0) - Number(a[1] || 0))
     .slice(0, 8);
   const max = Math.max(...safeRows.map(([, value]) => Number(value || 0)), 1);
-  const colors = ['coral', 'peach', 'apricot', 'olive', 'muted', 'blue'];
+  const colors = ['fire', 'ember', 'amber', 'olive', 'moss', 'sand', 'clay', 'sage'];
   const positions = [
     [72, 34],
     [55, 48],
@@ -710,8 +717,8 @@ function ringCard(label, value) {
         <svg class="ring-svg" viewBox="0 0 112 112" aria-hidden="true">
           <defs>
             <linearGradient id="ringGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stop-color="#ff3f6e"></stop>
-              <stop offset="100%" stop-color="#ff5d7a"></stop>
+              <stop offset="0%" stop-color="#ffae43"></stop>
+              <stop offset="100%" stop-color="#b91934"></stop>
             </linearGradient>
           </defs>
           <circle class="ring-track" cx="56" cy="56" r="${radius}"></circle>
@@ -822,7 +829,7 @@ function renderCharts() {
         data: clientData.finance.fixedMonths.map((row) => row.total),
         borderColor: gradientBackground(1),
         backgroundColor: areaGradient(1),
-        pointBackgroundColor: '#ffffff',
+        pointBackgroundColor: '#ffae43',
         pointRadius: 3,
         fill: true,
         tension: 0.35,

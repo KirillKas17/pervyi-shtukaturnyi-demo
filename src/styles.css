@@ -6,12 +6,27 @@
   --text: rgba(255, 255, 255, 0.9);
   --muted: rgba(255, 255, 255, 0.52);
   --muted-2: rgba(255, 255, 255, 0.34);
-  --pink: #ff3f6e;
-  --pink-2: #ff5d7a;
-  --orange: #ff9f3f;
-  --yellow: #ffd451;
-  --green: #7de05b;
-  --blue: #4e8cff;
+  --accent-1: #ffae43;
+  --accent-2: #ff5a45;
+  --accent-3: #b91934;
+  --accent-4: #ff9b43;
+  --accent-5: #f05a42;
+  --accent-6: #c92539;
+  --accent-7: #ffc04e;
+  --accent-8: #ff8845;
+  --accent-9: #d0383a;
+  --accent-10: #e6c94b;
+  --accent-11: #ba9c3f;
+  --accent-12: #60743d;
+  --accent-13: #efc653;
+  --accent-14: #c6a64b;
+  --accent-15: #657a40;
+  --pink: var(--accent-2);
+  --pink-2: var(--accent-1);
+  --orange: var(--accent-4);
+  --yellow: var(--accent-7);
+  --green: var(--accent-12);
+  --blue: var(--accent-11);
   --panel-radius: 28px;
   --card-radius: 22px;
   --shadow: 0 24px 70px rgba(0, 0, 0, 0.48);
@@ -34,7 +49,7 @@ body {
   overflow: hidden;
   background:
     radial-gradient(circle at 50% 0%, rgba(54, 59, 73, 0.55), transparent 32%),
-    radial-gradient(circle at 85% 18%, rgba(255, 63, 110, 0.08), transparent 24%),
+    radial-gradient(circle at 85% 18%, rgba(255, 174, 67, 0.075), transparent 24%),
     linear-gradient(145deg, #11131a, #08090d 72%);
   color: var(--text);
   font-family: Inter, "Segoe UI", Arial, sans-serif;
@@ -108,7 +123,7 @@ button {
   width: 42px;
   height: 42px;
   border-radius: 14px;
-  background: conic-gradient(from 220deg, #ff3d68, #ff9346, #ff5d62, #ff3d68);
+  background: conic-gradient(from 220deg, var(--accent-3), var(--accent-1), var(--accent-2), var(--accent-3));
   box-shadow: 0 10px 25px rgba(255, 78, 93, 0.25);
   color: #fff;
   font-size: 13px;
@@ -169,8 +184,8 @@ button {
   width: 5px;
   height: 38px;
   border-radius: 999px;
-  background: linear-gradient(180deg, var(--pink-2), #ff2e67);
-  box-shadow: 0 0 12px rgba(255, 61, 104, 0.42);
+  background: linear-gradient(180deg, var(--accent-1), var(--accent-3));
+  box-shadow: 0 0 12px rgba(255, 174, 67, 0.3);
 }
 
 .nav-icon {
@@ -889,7 +904,7 @@ table {
   padding: 0;
   border: 0;
   background: transparent;
-  color: var(--pink-2);
+  color: var(--accent-1);
   font-size: 12px;
   text-align: left;
 }
@@ -965,7 +980,7 @@ th {
   display: block;
   height: 100%;
   border-radius: inherit;
-  box-shadow: 0 0 10px rgba(255, 63, 110, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.28);
+  box-shadow: 0 0 10px rgba(255, 174, 67, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.28);
 }
 
 .bubble-map {
@@ -976,8 +991,8 @@ th {
   border: 1px solid rgba(255, 255, 255, 0.045);
   border-radius: 22px;
   background:
-    radial-gradient(circle at 62% 34%, rgba(255, 120, 92, 0.07), transparent 28%),
-    radial-gradient(circle at 36% 74%, rgba(255, 208, 92, 0.045), transparent 25%),
+    radial-gradient(circle at 62% 34%, rgba(255, 136, 69, 0.07), transparent 28%),
+    radial-gradient(circle at 36% 74%, rgba(230, 201, 75, 0.045), transparent 25%),
     linear-gradient(145deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.012));
 }
 
@@ -994,7 +1009,7 @@ th {
   height: 230px;
   right: 12%;
   top: 8%;
-  background: radial-gradient(circle, rgba(255, 95, 111, 0.09), transparent 68%);
+  background: radial-gradient(circle, rgba(255, 90, 69, 0.09), transparent 68%);
 }
 
 .bubble-map .zone.two {
@@ -1092,34 +1107,44 @@ th {
   font-weight: 800;
 }
 
-.bubble.coral {
-  background: radial-gradient(circle at 36% 28%, #ff9aa3 0%, #ff5f6f 42%, #b91f48 100%);
-  box-shadow: 0 18px 34px rgba(0, 0, 0, 0.34), 0 0 18px rgba(255, 95, 111, 0.18), inset 0 2px 2px rgba(255, 255, 255, 0.23), inset 0 -10px 16px rgba(0, 0, 0, 0.22);
+.bubble.fire {
+  background: radial-gradient(circle at 36% 28%, #ffd879 0%, #ffae43 42%, #b91934 100%);
+  box-shadow: 0 18px 34px rgba(0, 0, 0, 0.34), 0 0 14px rgba(255, 174, 67, 0.16), inset 0 2px 2px rgba(255, 255, 255, 0.22), inset 0 -10px 16px rgba(0, 0, 0, 0.22);
 }
 
-.bubble.peach {
-  background: radial-gradient(circle at 36% 28%, #ffc19a 0%, #ff8b5c 42%, #b84d2d 100%);
-  box-shadow: 0 18px 34px rgba(0, 0, 0, 0.34), 0 0 16px rgba(255, 139, 92, 0.17), inset 0 2px 2px rgba(255, 255, 255, 0.22), inset 0 -10px 16px rgba(0, 0, 0, 0.22);
+.bubble.ember {
+  background: radial-gradient(circle at 36% 28%, #ffc07c 0%, #ff9b43 42%, #c92539 100%);
+  box-shadow: 0 18px 34px rgba(0, 0, 0, 0.34), 0 0 14px rgba(255, 155, 67, 0.15), inset 0 2px 2px rgba(255, 255, 255, 0.22), inset 0 -10px 16px rgba(0, 0, 0, 0.22);
 }
 
-.bubble.apricot {
-  background: radial-gradient(circle at 36% 28%, #ffd8a0 0%, #ffb45f 42%, #a86b28 100%);
-  box-shadow: 0 18px 34px rgba(0, 0, 0, 0.34), 0 0 14px rgba(255, 180, 95, 0.15), inset 0 2px 2px rgba(255, 255, 255, 0.22), inset 0 -10px 16px rgba(0, 0, 0, 0.22);
+.bubble.amber {
+  background: radial-gradient(circle at 36% 28%, #ffe4a4 0%, #ffc04e 42%, #d0383a 100%);
+  box-shadow: 0 18px 34px rgba(0, 0, 0, 0.34), 0 0 13px rgba(255, 192, 78, 0.14), inset 0 2px 2px rgba(255, 255, 255, 0.22), inset 0 -10px 16px rgba(0, 0, 0, 0.22);
 }
 
 .bubble.olive {
-  background: radial-gradient(circle at 36% 28%, #e5ef93 0%, #a9c75a 42%, #596f2e 100%);
-  box-shadow: 0 18px 34px rgba(0, 0, 0, 0.34), 0 0 14px rgba(169, 199, 90, 0.14), inset 0 2px 2px rgba(255, 255, 255, 0.21), inset 0 -10px 16px rgba(0, 0, 0, 0.22);
+  background: radial-gradient(circle at 36% 28%, #f4df7c 0%, #e6c94b 42%, #60743d 100%);
+  box-shadow: 0 18px 34px rgba(0, 0, 0, 0.34), 0 0 12px rgba(230, 201, 75, 0.13), inset 0 2px 2px rgba(255, 255, 255, 0.21), inset 0 -10px 16px rgba(0, 0, 0, 0.22);
 }
 
-.bubble.muted {
-  background: radial-gradient(circle at 36% 28%, #ffa884 0%, #d86a50 42%, #713334 100%);
-  box-shadow: 0 18px 34px rgba(0, 0, 0, 0.34), 0 0 12px rgba(216, 106, 80, 0.12), inset 0 2px 2px rgba(255, 255, 255, 0.2), inset 0 -10px 16px rgba(0, 0, 0, 0.22);
+.bubble.moss {
+  background: radial-gradient(circle at 36% 28%, #f6d98a 0%, #efc653 42%, #657a40 100%);
+  box-shadow: 0 18px 34px rgba(0, 0, 0, 0.34), 0 0 12px rgba(239, 198, 83, 0.12), inset 0 2px 2px rgba(255, 255, 255, 0.2), inset 0 -10px 16px rgba(0, 0, 0, 0.22);
 }
 
-.bubble.blue {
-  background: radial-gradient(circle at 36% 28%, #9fc5ff 0%, #4e8cff 42%, #24408f 100%);
-  box-shadow: 0 18px 34px rgba(0, 0, 0, 0.34), 0 0 12px rgba(78, 140, 255, 0.18), inset 0 2px 2px rgba(255, 255, 255, 0.2), inset 0 -10px 16px rgba(0, 0, 0, 0.22);
+.bubble.sand {
+  background: radial-gradient(circle at 36% 28%, #ffe7a5 0%, #ffd879 42%, #6f4f35 100%);
+  box-shadow: 0 18px 34px rgba(0, 0, 0, 0.34), 0 0 12px rgba(255, 216, 121, 0.12), inset 0 2px 2px rgba(255, 255, 255, 0.2), inset 0 -10px 16px rgba(0, 0, 0, 0.22);
+}
+
+.bubble.clay {
+  background: radial-gradient(circle at 36% 28%, #ffb08d 0%, #ff7d55 42%, #7f2a32 100%);
+  box-shadow: 0 18px 34px rgba(0, 0, 0, 0.34), 0 0 12px rgba(255, 125, 85, 0.13), inset 0 2px 2px rgba(255, 255, 255, 0.2), inset 0 -10px 16px rgba(0, 0, 0, 0.22);
+}
+
+.bubble.sage {
+  background: radial-gradient(circle at 36% 28%, #eef19a 0%, #d4d968 42%, #47583a 100%);
+  box-shadow: 0 18px 34px rgba(0, 0, 0, 0.34), 0 0 12px rgba(212, 217, 104, 0.12), inset 0 2px 2px rgba(255, 255, 255, 0.2), inset 0 -10px 16px rgba(0, 0, 0, 0.22);
 }
 
 .bubble-summary {
