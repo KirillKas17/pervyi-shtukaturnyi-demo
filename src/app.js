@@ -199,12 +199,6 @@ function objectRows() {
     .filter((row) => row.revenue || row.contractorCost || row.grossProfit || row.netProfit);
 }
 
-function topRowsBy(key, limit = 8) {
-  return [...objectRows()]
-    .sort((a, b) => Number(b[key] || 0) - Number(a[key] || 0))
-    .slice(0, limit);
-}
-
 function reportMetrics() {
   const s = objectSummary();
   return [
@@ -324,39 +318,25 @@ function renderObjectScope() {
 
 function renderObjectAnalysisView() {
   return `
-    <article class="panel chart-panel span-4 row-2">
+    <article class="panel chart-panel span-6 row-2">
       <div class="panel-title">
         <h3>Работы внутри среза</h3>
       </div>
       <canvas id="objectRowsChart"></canvas>
     </article>
 
-    <article class="panel chart-panel span-4">
+    <article class="panel chart-panel span-3 row-2">
       <div class="panel-title">
         <h3>Финансовая структура</h3>
       </div>
       <canvas id="objectFinancialMixChart"></canvas>
     </article>
 
-    <article class="panel chart-panel span-4">
+    <article class="panel chart-panel span-3 row-2">
       <div class="panel-title">
         <h3>Расходы по статьям</h3>
       </div>
       <canvas id="objectExpenseChart"></canvas>
-    </article>
-
-    <article class="panel chart-panel span-4">
-      <div class="panel-title">
-        <h3>План / факт объёма</h3>
-      </div>
-      <canvas id="objectPlanFactChart"></canvas>
-    </article>
-
-    <article class="panel chart-panel span-4">
-      <div class="panel-title">
-        <h3>Прибыльные строки</h3>
-      </div>
-      <canvas id="objectProfitRankChart"></canvas>
     </article>
   `;
 }
@@ -659,42 +639,6 @@ function renderCharts() {
       ],
     },
     options: axisOptions(true),
-  });
-
-  addIfPresent('objectPlanFactChart', {
-    type: 'bar',
-    data: {
-      labels: topRowsBy('revenue', 6).map((row) => short(row.workName || `Строка ${row.row}`, 14)),
-      datasets: [
-        {
-          label: 'Проект',
-          data: topRowsBy('revenue', 6).map((row) => row.plannedQty),
-          backgroundColor: gradientBackground(2, true),
-          borderRadius: 7,
-        },
-        {
-          label: 'Факт',
-          data: topRowsBy('revenue', 6).map((row) => row.actualQty),
-          backgroundColor: gradientBackground(0, true),
-          borderRadius: 7,
-        },
-      ],
-    },
-    options: axisOptions(true),
-  });
-
-  addIfPresent('objectProfitRankChart', {
-    type: 'bar',
-    data: {
-      labels: topRowsBy('grossProfit', 6).map((row) => short(row.workName || `Строка ${row.row}`, 14)),
-      datasets: [{
-        label: 'Прибыль',
-        data: topRowsBy('grossProfit', 6).map((row) => row.grossProfit || row.netProfit),
-        backgroundColor: indexedGradient(true),
-        borderRadius: 7,
-      }],
-    },
-    options: axisOptions(),
   });
 
   const selected = workRows()[state.selectedWork] || workRows()[0];
