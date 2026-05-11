@@ -279,21 +279,27 @@ function renderOverview() {
       </section>
 
       <section class="report-grid overview-grid">
-        <article class="panel chart-panel span-5">
-          <div class="panel-title">
-            <h3>Финансовая структура</h3>
-          </div>
-          <canvas id="overviewResultChart"></canvas>
-        </article>
-
-        <article class="panel chart-panel span-4">
+        <article class="panel chart-panel overview-main">
           <div class="panel-title">
             <h3>Выручка и чистая прибыль</h3>
           </div>
           <canvas id="overviewProfitChart"></canvas>
         </article>
 
-        <article class="panel metric-table span-3">
+        <article class="panel ref-bar-panel overview-side-top">
+          <div class="panel-title">
+            <h3>Финансовая структура</h3>
+          </div>
+          ${financeStructureCard([
+            ['Выручка', s.revenue],
+            ['Исполнитель', s.contractorCost],
+            ['Валовая', s.grossProfit],
+            ['Расходы', expenseTotal],
+            ['Чистая', s.netProfit],
+          ], s.netProfit, 'Чистая прибыль')}
+        </article>
+
+        <article class="panel metric-table overview-side-bottom">
           <div class="panel-title">
             <h3>Метрики из ведомости</h3>
           </div>
@@ -353,11 +359,17 @@ function renderObjectAnalysisView() {
       <canvas id="objectRowsChart"></canvas>
     </article>
 
-    <article class="panel chart-panel span-6">
+    <article class="panel ref-bar-panel span-6">
       <div class="panel-title">
         <h3>Финансовая структура</h3>
       </div>
-      <canvas id="objectFinancialMixChart"></canvas>
+      ${financeStructureCard([
+        ['Выручка', objectSummary().revenue],
+        ['Исполнитель', objectSummary().contractorCost],
+        ['Валовая', objectSummary().grossProfit],
+        ['Расходы', objectExpenseTotal()],
+        ['Чистая', objectSummary().netProfit],
+      ], objectSummary().netProfit, 'Чистая прибыль')}
     </article>
 
     <article class="panel chart-panel span-6">
@@ -554,6 +566,47 @@ function progressRow(label, value, total, index = 0) {
   `;
 }
 
+function financeStructureCard(rows, mainValue, mainLabel) {
+  const max = Math.max(...rows.map(([, value]) => Number(value || 0)), 1);
+  const barColors = [
+    ['#ffae43', '#ff5a45', '#b91934'],
+    ['#ff9b43', '#f05a42', '#c92539'],
+    ['#ffc04e', '#ff8845', '#d0383a'],
+    ['#e6c94b', '#ba9c3f', '#60743d'],
+    ['#efc653', '#c6a64b', '#657a40'],
+  ];
+  return `
+    <div class="ref-chart">
+      <div class="ref-bars">
+        ${rows.map(([label, value], index) => {
+          const height = Math.max(10, Math.min(96, (Number(value || 0) / max) * 92));
+          const colors = barColors[index % barColors.length];
+          return `
+            <div class="ref-bar-item">
+              <div class="ref-bar-track">
+                <div class="ref-bar" style="height:${height}%;--top:${colors[0]};--middle:${colors[1]};--bottom:${colors[2]};"></div>
+              </div>
+              <div class="ref-bar-label">${short(label, 9)}</div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+      <div class="ref-side-info">
+        ${rows.slice(0, 2).map(([label, value]) => `
+          <div class="ref-metric-small">
+            <strong>${money(value)}</strong>
+            ${label}
+          </div>
+        `).join('')}
+        <div class="ref-main-number">
+          <div class="value">${money(mainValue)}</div>
+          <div class="caption">${mainLabel}</div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
 function bubbleChart(rows, total, yLabel = 'Сумма', xLabel = 'Доля', className = '') {
   const safeRows = rows
     .filter(([, value]) => Number(value || 0) > 0)
@@ -657,22 +710,6 @@ function setPage(page) {
 
 function renderCharts() {
   const s = state.page === 'overview' ? aggregateSummary(knownObjects()) : objectSummary();
-  const currentExpenseTotal = state.page === 'overview'
-    ? s.advance + s.tools + s.customerExpenses + s.tax + s.housing + s.laborers + s.unplanned
-    : objectExpenseTotal();
-
-  addIfPresent('overviewResultChart', {
-    type: 'bar',
-    data: {
-      labels: ['Выручка', 'Исполнитель', 'Валовая', 'Расходы', 'Чистая'],
-      datasets: [{
-        data: [s.revenue, s.contractorCost, s.grossProfit, currentExpenseTotal, s.netProfit],
-        backgroundColor: indexedGradient(true),
-        borderRadius: 9,
-      }],
-    },
-    options: axisOptions(),
-  });
 
   addIfPresent('overviewProfitChart', {
     type: 'line',
@@ -703,19 +740,6 @@ function renderCharts() {
   addIfPresent('objectExpenseChart', doughnutConfig(objectExpenses()));
   addIfPresent('fixedGroupChart', doughnutConfig(fixedGroups()));
   addIfPresent('fixedPieChart', doughnutConfig(fixedGroups()));
-
-  addIfPresent('objectFinancialMixChart', {
-    type: 'bar',
-    data: {
-      labels: ['Выручка', 'Исполнитель', 'Валовая', 'Расходы', 'Чистая'],
-      datasets: [{
-        data: [s.revenue, s.contractorCost, s.grossProfit, currentExpenseTotal, s.netProfit],
-        backgroundColor: indexedGradient(true),
-        borderRadius: 8,
-      }],
-    },
-    options: axisOptions(),
-  });
 
   addIfPresent('objectRowsChart', {
     type: 'line',
