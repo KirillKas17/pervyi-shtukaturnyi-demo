@@ -138,6 +138,12 @@ function objectRows() {
     .filter((row) => row.revenue || row.contractorCost || row.grossProfit || row.netProfit);
 }
 
+function topRowsBy(key, limit = 8) {
+  return [...objectRows()]
+    .sort((a, b) => Number(b[key] || 0) - Number(a[key] || 0))
+    .slice(0, limit);
+}
+
 function reportMetrics() {
   const s = objectSummary();
   return [
@@ -228,127 +234,68 @@ function renderObject() {
       </section>
 
       <section class="report-grid object-grid">
-        ${state.objectScope === 'all' ? renderAllObjectsView() : renderSingleObjectView()}
+        ${renderObjectAnalysisView()}
       </section>
     </div>
   `;
 }
 
 function renderObjectScope() {
+  const objectOptions = knownObjects().map((object) => `
+    <option value="${object.id}" ${state.objectScope === object.id ? 'selected' : ''}>${object.name}</option>
+  `).join('');
+
   return `
     <section class="scope-row" aria-label="Срез объектов">
       <span>Срез</span>
       <button class="${state.objectScope === 'all' ? 'active' : ''}" data-object-scope="all">
         Все объекты
       </button>
-      ${knownObjects().map((object) => `
-        <button class="${state.objectScope === object.id ? 'active' : ''}" data-object-scope="${object.id}">
-          ${object.name}
-        </button>
-      `).join('')}
+      <label class="object-select">
+        <select data-object-select>
+          <option value="">Выбрать объект</option>
+          ${objectOptions}
+        </select>
+      </label>
     </section>
   `;
 }
 
-function objectCards() {
-  return knownObjects().map((object) => {
-    const summary = aggregateSummary([object]);
-    const rows = object.rows.filter((row) => row.revenue || row.contractorCost || row.grossProfit || row.netProfit);
-    return { ...object, summary, rows };
-  });
-}
-
-function renderAllObjectsView() {
+function renderObjectAnalysisView() {
   return `
-    <article class="panel table-panel span-7 row-2">
+    <article class="panel chart-panel span-4 row-2">
       <div class="panel-title">
-        <h3>Все известные объекты</h3>
-      </div>
-      <div class="clean-table">
-        <table>
-          <thead>
-            <tr>
-              <th>Объект</th>
-              <th class="right">Работ</th>
-              <th class="right">Выручка</th>
-              <th class="right">Исполнитель</th>
-              <th class="right">Чистая прибыль</th>
-              <th class="right">Маржа</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${objectCards().map((object) => `
-              <tr>
-                <td>
-                  <button class="link-button" data-object-scope="${object.id}">${object.name}</button>
-                </td>
-                <td class="right">${number(object.rows.length, 0)}</td>
-                <td class="right">${money(object.summary.revenue)}</td>
-                <td class="right">${money(object.summary.contractorCost)}</td>
-                <td class="right">${money(object.summary.netProfit)}</td>
-                <td class="right">${number(pct(object.summary.netProfit, object.summary.revenue))}%</td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-      </div>
-    </article>
-
-    <article class="panel chart-panel span-5 row-2">
-      <div class="panel-title">
-        <h3>Сравнение объектов</h3>
-      </div>
-      <canvas id="objectsCompareChart"></canvas>
-    </article>
-  `;
-}
-
-function renderSingleObjectView() {
-  return `
-    <article class="panel chart-panel span-6 row-2">
-      <div class="panel-title">
-        <h3>Работы внутри объекта</h3>
+        <h3>Работы внутри среза</h3>
       </div>
       <canvas id="objectRowsChart"></canvas>
     </article>
 
-    <article class="panel metric-table span-6">
+    <article class="panel chart-panel span-4">
       <div class="panel-title">
-        <h3>Показатели объекта</h3>
+        <h3>Финансовая структура</h3>
       </div>
-      ${metricTable(reportMetrics().slice(0, 6))}
+      <canvas id="objectFinancialMixChart"></canvas>
     </article>
 
-    <article class="panel table-panel span-6">
+    <article class="panel chart-panel span-4">
       <div class="panel-title">
-        <h3>Строки работ</h3>
+        <h3>Расходы по статьям</h3>
       </div>
-      <div class="clean-table">
-        <table>
-          <thead>
-            <tr>
-              <th>№</th>
-              <th>Работа</th>
-              <th class="right">Факт</th>
-              <th class="right">Заказчик</th>
-              <th class="right">Исполнитель</th>
-              <th class="right">Прибыль</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${objectRows().map((row) => `
-              <tr>
-                <td>${row.row}</td>
-                <td>${row.workName || `Строка ${row.row}`}</td>
-                <td class="right">${number(row.actualQty, 0)}</td>
-                <td class="right">${money(row.revenue)}</td>
-                <td class="right">${money(row.contractorCost)}</td>
-                <td class="right">${money(row.grossProfit || row.netProfit)}</td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
+      <canvas id="objectExpenseChart"></canvas>
+    </article>
+
+    <article class="panel chart-panel span-4">
+      <div class="panel-title">
+        <h3>План / факт объёма</h3>
       </div>
+      <canvas id="objectPlanFactChart"></canvas>
+    </article>
+
+    <article class="panel chart-panel span-4">
+      <div class="panel-title">
+        <h3>Прибыльные строки</h3>
+      </div>
+      <canvas id="objectProfitRankChart"></canvas>
     </article>
   `;
 }
@@ -573,6 +520,13 @@ function bindEvents() {
       renderApp();
     });
   });
+  document.querySelectorAll('[data-object-select]').forEach((select) => {
+    select.addEventListener('change', () => {
+      if (!select.value) return;
+      state.objectScope = select.value;
+      renderApp();
+    });
+  });
   document.getElementById('seedButton').onclick = renderApp;
 }
 
@@ -601,10 +555,23 @@ function renderCharts() {
   addIfPresent('fixedGroupChart', doughnutConfig(fixedGroups()));
   addIfPresent('fixedPieChart', doughnutConfig(fixedGroups()));
 
+  addIfPresent('objectFinancialMixChart', {
+    type: 'bar',
+    data: {
+      labels: ['Выручка', 'Исполнитель', 'Валовая', 'Расходы', 'Чистая'],
+      datasets: [{
+        data: [s.revenue, s.contractorCost, s.grossProfit, objectExpenseTotal(), s.netProfit],
+        backgroundColor: palette.slice(0, 5),
+        borderRadius: 8,
+      }],
+    },
+    options: axisOptions(),
+  });
+
   addIfPresent('objectRowsChart', {
     type: 'line',
     data: {
-      labels: objectRows().slice(0, 25).map((row) => row.row),
+      labels: objectRows().slice(0, 25).map((row) => short(row.workName || `Строка ${row.row}`, 14)),
       datasets: [
         {
           label: 'Выручка',
@@ -627,26 +594,40 @@ function renderCharts() {
     options: axisOptions(true),
   });
 
-  addIfPresent('objectsCompareChart', {
+  addIfPresent('objectPlanFactChart', {
     type: 'bar',
     data: {
-      labels: objectCards().map((object) => object.name),
+      labels: topRowsBy('revenue', 6).map((row) => short(row.workName || `Строка ${row.row}`, 14)),
       datasets: [
         {
-          label: 'Выручка',
-          data: objectCards().map((object) => object.summary.revenue),
-          backgroundColor: palette[0],
-          borderRadius: 9,
+          label: 'Проект',
+          data: topRowsBy('revenue', 6).map((row) => row.plannedQty),
+          backgroundColor: palette[2],
+          borderRadius: 7,
         },
         {
-          label: 'Чистая прибыль',
-          data: objectCards().map((object) => object.summary.netProfit),
-          backgroundColor: palette[1],
-          borderRadius: 9,
+          label: 'Факт',
+          data: topRowsBy('revenue', 6).map((row) => row.actualQty),
+          backgroundColor: palette[0],
+          borderRadius: 7,
         },
       ],
     },
     options: axisOptions(true),
+  });
+
+  addIfPresent('objectProfitRankChart', {
+    type: 'bar',
+    data: {
+      labels: topRowsBy('grossProfit', 6).map((row) => short(row.workName || `Строка ${row.row}`, 14)),
+      datasets: [{
+        label: 'Прибыль',
+        data: topRowsBy('grossProfit', 6).map((row) => row.grossProfit || row.netProfit),
+        backgroundColor: palette[1],
+        borderRadius: 7,
+      }],
+    },
+    options: axisOptions(),
   });
 
   const selected = workRows()[state.selectedWork] || workRows()[0];

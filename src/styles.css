@@ -31,7 +31,8 @@ body {
 }
 
 button,
-input {
+input,
+select {
   font: inherit;
 }
 
@@ -270,6 +271,7 @@ h3 {
 }
 
 .scope-row button,
+.object-select select,
 .link-button {
   border: 1px solid var(--line);
   background: #ffffff;
@@ -292,6 +294,22 @@ h3 {
   border-color: var(--dark);
   background: var(--dark);
   color: #ffffff;
+}
+
+.object-select {
+  min-width: 220px;
+  max-width: 360px;
+  height: 34px;
+}
+
+.object-select select {
+  width: 100%;
+  height: 34px;
+  padding: 0 38px 0 14px;
+  border-radius: 999px;
+  outline: 0;
+  color: var(--ink);
+  font-size: 12px;
 }
 
 .kpi-row,
