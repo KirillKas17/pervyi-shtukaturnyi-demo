@@ -622,15 +622,17 @@ h3 {
 }
 
 .ref-bar-label {
-  max-width: 52px;
-  overflow: hidden;
+  max-width: 70px;
+  overflow: visible;
   color: rgba(230, 238, 240, 0.34);
   font-size: 9px;
   font-weight: 800;
   letter-spacing: 0.4px;
-  text-overflow: ellipsis;
+  line-height: 1.12;
+  text-align: center;
   text-transform: uppercase;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .ref-side-info {
@@ -780,27 +782,28 @@ h3 {
   gap: 8px 12px;
   min-height: 0;
   margin-top: 12px;
-  overflow: hidden;
+  overflow: hidden auto;
   color: rgba(244, 241, 237, 0.42);
   font-size: 10px;
 }
 
 .peach-legend-item {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 7px;
   min-width: 0;
-  white-space: nowrap;
+  line-height: 1.25;
+  white-space: normal;
 }
 
 .peach-legend-item span:last-child {
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
 }
 
 .peach-dot {
   flex: 0 0 auto;
+  margin-top: 2px;
   width: 8px;
   height: 8px;
   border-radius: 50%;
@@ -1009,15 +1012,26 @@ th {
 
 .bubble-map {
   position: relative;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: 10px;
   height: calc(100% - 36px);
   min-height: 0;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.045);
   border-radius: 22px;
+  padding: 12px;
   background:
     radial-gradient(circle at 62% 34%, rgba(255, 136, 69, 0.07), transparent 28%),
     radial-gradient(circle at 36% 74%, rgba(230, 201, 75, 0.045), transparent 25%),
     linear-gradient(145deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.012));
+}
+
+.bubble-plot {
+  position: relative;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: 16px;
 }
 
 .bubble-map .zone {
@@ -1117,18 +1131,11 @@ th {
 .bubble.tiny { width: 52px; height: 52px; font-size: 9px; }
 
 .bubble span {
-  max-width: 82%;
-  text-align: center;
-  line-height: 1.12;
-  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.25);
+  display: none;
 }
 
 .bubble small {
-  display: block;
-  margin-top: 4px;
-  color: rgba(255, 255, 255, 0.68);
-  font-size: 9px;
-  font-weight: 800;
+  display: none;
 }
 
 .bubble.fire {
@@ -1209,6 +1216,56 @@ th {
   color: #fff;
   font-size: 17px;
 }
+
+.bubble-legend {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px 12px;
+  max-height: 92px;
+  overflow: hidden auto;
+  padding-right: 4px;
+}
+
+.bubble-legend-item {
+  display: grid;
+  grid-template-columns: 9px minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 7px;
+  min-width: 0;
+  color: rgba(244, 241, 237, 0.48);
+  font-size: 10px;
+  line-height: 1.25;
+}
+
+.bubble-legend-item span:nth-child(2) {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.bubble-legend-item strong {
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.bubble-legend-dot {
+  width: 8px;
+  height: 8px;
+  margin-top: 2px;
+  border-radius: 50%;
+  box-shadow: 0 0 7px rgba(255, 180, 120, 0.18);
+}
+
+.bubble-legend-dot.fire { background: #ffae43; }
+.bubble-legend-dot.teal { background: #7db8a2; }
+.bubble-legend-dot.amber { background: #ffc04e; }
+.bubble-legend-dot.violet { background: #9a7ba8; }
+.bubble-legend-dot.olive { background: #e6c94b; }
+.bubble-legend-dot.rose { background: #c96063; }
+.bubble-legend-dot.moss { background: #efc653; }
+.bubble-legend-dot.steel { background: #6f8fa8; }
 
 .placeholder-panel {
   display: grid;

@@ -421,18 +421,17 @@ function renderExpenses() {
       </section>
 
       <section class="report-grid expense-grid">
-        <article class="panel donut-panel span-5 row-2">
+        <article class="panel ref-bar-panel span-5 row-2">
           <div class="panel-title">
-            <h3>Объектные расходы</h3>
+            <h3>Влияние расходов на прибыль</h3>
           </div>
-          ${peachDonutChart(objectExpenses(), objectExpenseTotal(), 'Итого')}
-        </article>
-
-        <article class="panel donut-panel span-4">
-          <div class="panel-title">
-            <h3>Постоянные расходы</h3>
-          </div>
-          ${peachDonutChart(fixedGroups(), fixedTotal(), 'Итого')}
+          ${financeStructureCard([
+            ['Выручка', objectSummary().revenue],
+            ['Валовая прибыль', objectSummary().grossProfit],
+            ['Объектные расходы', objectExpenseTotal()],
+            ['Постоянные платежи', fixedTotal()],
+            ['Чистая прибыль', objectSummary().netProfit],
+          ], objectSummary().netProfit, 'Итог после расходов')}
         </article>
 
         <article class="panel progress-panel span-3">
@@ -442,6 +441,13 @@ function renderExpenses() {
           <div class="progress-stack">
             ${fixedGroups().map(([label, value], index) => progressRow(label, value, fixedTotal(), index)).join('')}
           </div>
+        </article>
+
+        <article class="panel donut-panel span-4">
+          <div class="panel-title">
+            <h3>Объектные расходы</h3>
+          </div>
+          ${peachDonutChart(objectExpenses(), objectExpenseTotal(), 'Итого')}
         </article>
 
         <article class="panel progress-panel span-7">
@@ -613,7 +619,7 @@ function financeStructureCard(rows, mainValue, mainLabel) {
               <div class="ref-bar-track">
                 <div class="ref-bar" style="height:${height}%;--top:${colors[0]};--middle:${colors[1]};--bottom:${colors[2]};"></div>
               </div>
-              <div class="ref-bar-label">${short(label, 9)}</div>
+              <div class="ref-bar-label">${label}</div>
             </div>
           `;
         }).join('')}
@@ -668,7 +674,7 @@ function peachDonutChart(rows, total, centerLabel = 'Итого') {
         ${safeRows.map(([label, value], index) => `
           <div class="peach-legend-item" title="${label}: ${money(value)}">
             <span class="peach-dot" style="background:${colors[index % colors.length]}"></span>
-            <span>${short(label, 16)} ${number(pct(value, sumValue), 0)}%</span>
+            <span>${label} ${number(pct(value, sumValue), 0)}%</span>
           </div>
         `).join('')}
       </div>
@@ -696,25 +702,32 @@ function bubbleChart(rows, total, yLabel = 'Сумма', xLabel = 'Доля', cl
 
   return `
     <div class="bubble-map ${className}">
-      <div class="zone one"></div>
-      <div class="zone two"></div>
-      <div class="soft-axis-x"></div>
-      <div class="soft-axis-y"></div>
-      <div class="axis-caption y">${yLabel}</div>
-      <div class="axis-caption x">${xLabel}</div>
-      ${safeRows.map(([label, value], index) => {
-        const size = Number(value || 0) / max;
-        const sizeClass = size > 0.72 ? 'big' : size > 0.42 ? 'medium' : size > 0.22 ? 'small' : 'tiny';
-        const [left, top] = positions[index % positions.length];
-        return `
-          <div class="bubble ${colors[index % colors.length]} ${sizeClass}" style="left:${left}%;top:${top}%;" title="${label}: ${money(value)}">
-            <span>${short(label, 14)}<small>${money(value)}</small></span>
+      <div class="bubble-plot">
+        <div class="zone one"></div>
+        <div class="zone two"></div>
+        <div class="soft-axis-x"></div>
+        <div class="soft-axis-y"></div>
+        <div class="axis-caption y">${yLabel}</div>
+        <div class="axis-caption x">${xLabel}</div>
+        ${safeRows.map(([label, value], index) => {
+          const size = Number(value || 0) / max;
+          const sizeClass = size > 0.72 ? 'big' : size > 0.42 ? 'medium' : size > 0.22 ? 'small' : 'tiny';
+          const [left, top] = positions[index % positions.length];
+          return `<div class="bubble ${colors[index % colors.length]} ${sizeClass}" style="left:${left}%;top:${top}%;" title="${label}: ${money(value)}" aria-label="${label}: ${money(value)}"></div>`;
+        }).join('')}
+        <div class="bubble-summary">
+          <span>Итого</span>
+          <strong>${money(total)}</strong>
+        </div>
+      </div>
+      <div class="bubble-legend">
+        ${safeRows.map(([label, value], index) => `
+          <div class="bubble-legend-item" title="${label}: ${money(value)}">
+            <span class="bubble-legend-dot ${colors[index % colors.length]}"></span>
+            <span>${label}</span>
+            <strong>${number(pct(value, total), 0)}%</strong>
           </div>
-        `;
-      }).join('')}
-      <div class="bubble-summary">
-        <span>Итого</span>
-        <strong>${money(total)}</strong>
+        `).join('')}
       </div>
     </div>
   `;
