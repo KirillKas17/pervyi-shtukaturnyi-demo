@@ -15,12 +15,11 @@ const pages = [
 ];
 
 const gradientPairs = [
-  { from: '#2CC4EA', to: '#533885' },
-  { from: '#FF55C2', to: '#7222E3' },
-  { from: '#FFBC73', to: '#FF00B9' },
-  { from: '#46FFAB', to: '#A02EFF' },
-  { from: '#1D5BFF', to: '#C7FF17' },
-  { from: '#DD1FFF', to: '#24D8FB' },
+  { from: '#4B4962', to: '#1F1D36' },
+  { from: '#FF6383', to: '#E94560' },
+  { from: '#FFE895', to: '#FFBD69' },
+  { from: '#69E4D9', to: '#4FD3C4' },
+  { from: '#F9FEFF', to: '#E8F9FD' },
 ];
 const palette = gradientPairs.map((pair) => pair.from);
 const chartText = '#5f6b7a';
@@ -557,8 +556,8 @@ function ringCard(label, value) {
         <svg class="ring-svg" viewBox="0 0 112 112" aria-hidden="true">
           <defs>
             <linearGradient id="ringGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stop-color="#FF55C2"></stop>
-              <stop offset="100%" stop-color="#7222E3"></stop>
+              <stop offset="0%" stop-color="#69E4D9"></stop>
+              <stop offset="100%" stop-color="#4FD3C4"></stop>
             </linearGradient>
           </defs>
           <circle class="ring-track" cx="56" cy="56" r="${radius}"></circle>
