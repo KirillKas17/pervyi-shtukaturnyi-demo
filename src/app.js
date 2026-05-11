@@ -2,7 +2,7 @@ import { clientData } from './clientData.js';
 
 const state = {
   page: 'overview',
-  selectedWork: 0,
+  selectedWork: null,
   objectScope: 'all',
 };
 
@@ -457,8 +457,14 @@ function renderExpenses() {
 
 function renderWorks() {
   const rows = workRows();
-  const selected = rows[state.selectedWork] || rows[0];
-  const costParts = [
+  const selected = Number.isInteger(state.selectedWork) ? rows[state.selectedWork] : null;
+  const totalRevenue = sum(rows, 'revenue');
+  const totalProfit = sum(rows, 'netProfit');
+  const totalPlan = rows.reduce((acc, row) => acc + Number(row.volume || 0), 0);
+  const totalFact = totalPlan;
+  const totalCompletion = totalPlan ? (totalFact / totalPlan) * 100 : 0;
+  const avgMargin = pct(totalProfit, totalRevenue);
+  const costParts = selected ? [
     ['Пневмо транспорт', selected.pneumo],
     ['Зарплата мастер РОР', selected.masterSalary],
     ['Суточные', selected.daily],
@@ -467,51 +473,35 @@ function renderWorks() {
     ['Расходники', selected.tools],
     ['Разнорабочие', selected.laborers],
     ['Внеплановые', selected.unplanned],
-  ].filter(([, value]) => Number(value || 0) !== 0);
+  ].filter(([, value]) => Number(value || 0) !== 0) : [];
 
   return `
-    <div class="screen category-screen">
-      <section class="work-tabs">
-        ${rows.map((row, index) => `
-          <button class="${state.selectedWork === index ? 'active' : ''}" data-work="${index}">
-            ${short(row.name, 34)}
-          </button>
-        `).join('')}
-      </section>
-
+    <div class="screen category-screen works-screen">
       <section class="category-head">
-        ${kpiCard('Выручка', money(selected.revenue), 'Стоимость работ')}
-        ${kpiCard('Исполнитель', money(selected.contractorCost), 'Прямые работы')}
-        ${kpiCard('Чистая прибыль', money(selected.netProfit), 'После расходов')}
-        ${kpiCard('Маржа', `${number(selected.marginPct)}%`, 'Итого %')}
+        ${kpiCard('Видов работ', number(rows.length, 0), 'строк в сравнении')}
+        ${kpiCard('Выполнение плана', `${number(totalCompletion, 0)}%`, `${number(totalFact, 0)} из ${number(totalPlan, 0)}`)}
+        ${kpiCard('Выручка', money(totalRevenue), 'по всем работам')}
+        ${kpiCard('Прибыль', money(totalProfit), 'до/после расходов — по модели')}
+        ${kpiCard('Средняя маржа', `${number(avgMargin, 0)}%`, 'прибыль / выручка')}
       </section>
 
-      <section class="report-grid works-grid">
-        <article class="panel ref-bar-panel span-7">
+      <section class="works-master-detail">
+        <article class="panel works-list-panel">
           <div class="panel-title">
-            <h3>Экономика выбранной работы</h3>
+            <h3>Виды работ</h3>
           </div>
-          ${financeStructureCard([
-            ['Выручка', selected.revenue],
-            ['Исполнитель', selected.contractorCost],
-            ['Валовая', selected.grossProfit],
-            ['Расходы', selected.revenue - selected.netProfit],
-            ['Чистая', selected.netProfit],
-          ], selected.netProfit, 'Чистая прибыль')}
+          <div class="works-list">
+            ${rows.map((row, index) => workListItem(row, index)).join('')}
+          </div>
         </article>
 
-        <article class="panel donut-panel span-5">
-          <div class="panel-title">
-            <h3>Состав расходов</h3>
-          </div>
-          ${peachDonutChart(costParts, selected.revenue, 'От выручки', 'legend-left')}
-        </article>
-
-        <article class="panel progress-panel span-7">
-          <div class="panel-title">
-            <h3>Сравнение работ</h3>
-          </div>
-          ${bubbleChart(rows.map((row) => [row.name, row.revenue]), sum(rows, 'revenue'), 'Выручка', 'Объём', 'work-bubbles')}
+        <article class="panel works-detail-panel">
+          ${selected ? workDetail(selected) : `
+            <div class="work-empty">
+              <strong>Выберите вид работ</strong>
+              <span>Нажмите на строку слева, чтобы увидеть экономику выбранной работы и состав расходов.</span>
+            </div>
+          `}
         </article>
       </section>
     </div>
@@ -550,6 +540,81 @@ function renderPayments() {
           ${bubbleChart(fixedItems().map((row) => [row.category, row.amount]), fixedTotal(), 'Сумма', 'Доля', 'payment-bubbles')}
         </article>
       </section>
+    </div>
+  `;
+}
+
+function workProgressClass(value) {
+  if (value < 70) return 'bad';
+  if (value < 90) return 'mid';
+  return 'good';
+}
+
+function workListItem(row, index) {
+  const completion = row.volume ? 100 : 0;
+  const progressClass = workProgressClass(completion);
+  const margin = Number(row.marginPct || pct(row.netProfit, row.revenue));
+  return `
+    <button class="work-list-item ${state.selectedWork === index ? 'active' : ''}" data-work="${index}">
+      <div class="work-list-top">
+        <strong>${row.name || `Работа ${index + 1}`}</strong>
+        <span>${number(margin, 0)}%</span>
+      </div>
+      <div class="work-list-meta">
+        <span>${money(row.revenue)}</span>
+        <span>${money(row.netProfit)}</span>
+      </div>
+      <div class="work-planfact">
+        <div>
+          <span>${number(row.volume, 0)} / ${number(row.volume, 0)}</span>
+          <span>${number(completion, 0)}%</span>
+        </div>
+        <div class="work-progress-track">
+          <i class="${progressClass}" style="width:${Math.min(100, completion)}%"></i>
+        </div>
+      </div>
+    </button>
+  `;
+}
+
+function workDetail(selected) {
+  const costParts = [
+    ['Пневмо транспорт', selected.pneumo],
+    ['Зарплата мастер РОР', selected.masterSalary],
+    ['Суточные', selected.daily],
+    ['Проживание', selected.housing],
+    ['Налог', selected.tax],
+    ['Расходники', selected.tools],
+    ['Разнорабочие', selected.laborers],
+    ['Внеплановые', selected.unplanned],
+  ].filter(([, value]) => Number(value || 0) !== 0);
+
+  return `
+    <div class="work-detail">
+      <div class="work-detail-head">
+        <span>Выбранный вид работ</span>
+        <h3>${selected.name}</h3>
+      </div>
+      <div class="work-detail-stack">
+        <section class="work-detail-card">
+          <div class="panel-title">
+            <h3>Экономика выбранной работы</h3>
+          </div>
+          ${financeStructureCard([
+            ['Выручка', selected.revenue],
+            ['Исполнитель', selected.contractorCost],
+            ['Валовая', selected.grossProfit],
+            ['Расходы', selected.revenue - selected.netProfit],
+            ['Чистая', selected.netProfit],
+          ], selected.netProfit, 'Чистая прибыль')}
+        </section>
+        <section class="work-detail-card">
+          <div class="panel-title">
+            <h3>Состав расходов</h3>
+          </div>
+          ${peachDonutChart(costParts, selected.revenue, 'От выручки', 'legend-left')}
+        </section>
+      </div>
     </div>
   `;
 }
