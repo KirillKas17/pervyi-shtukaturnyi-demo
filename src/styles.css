@@ -21,6 +21,30 @@
   --accent-13: #efc653;
   --accent-14: #c6a64b;
   --accent-15: #657a40;
+  --accent-16: #d8924a;
+  --accent-17: #8a5b38;
+  --accent-18: #4f3428;
+  --accent-19: #c96063;
+  --accent-20: #87394b;
+  --accent-21: #4a2634;
+  --accent-22: #7db8a2;
+  --accent-23: #4f7f72;
+  --accent-24: #2d4f4b;
+  --accent-25: #9a7ba8;
+  --accent-26: #66517c;
+  --accent-27: #3d334f;
+  --accent-28: #c8a46a;
+  --accent-29: #8d6746;
+  --accent-30: #5a4432;
+  --accent-31: #9fae68;
+  --accent-32: #687a4b;
+  --accent-33: #3f5338;
+  --accent-34: #a55b78;
+  --accent-35: #6e3a55;
+  --accent-36: #432838;
+  --accent-37: #6f8fa8;
+  --accent-38: #4b6076;
+  --accent-39: #2d3d4f;
   --pink: var(--accent-2);
   --pink-2: var(--accent-1);
   --orange: var(--accent-4);
@@ -1117,6 +1141,11 @@ th {
   box-shadow: 0 18px 34px rgba(0, 0, 0, 0.34), 0 0 14px rgba(255, 155, 67, 0.15), inset 0 2px 2px rgba(255, 255, 255, 0.22), inset 0 -10px 16px rgba(0, 0, 0, 0.22);
 }
 
+.bubble.teal {
+  background: radial-gradient(circle at 36% 28%, #b5d7cb 0%, #7db8a2 42%, #2d4f4b 100%);
+  box-shadow: 0 18px 34px rgba(0, 0, 0, 0.34), 0 0 14px rgba(125, 184, 162, 0.14), inset 0 2px 2px rgba(255, 255, 255, 0.22), inset 0 -10px 16px rgba(0, 0, 0, 0.22);
+}
+
 .bubble.amber {
   background: radial-gradient(circle at 36% 28%, #ffe4a4 0%, #ffc04e 42%, #d0383a 100%);
   box-shadow: 0 18px 34px rgba(0, 0, 0, 0.34), 0 0 13px rgba(255, 192, 78, 0.14), inset 0 2px 2px rgba(255, 255, 255, 0.22), inset 0 -10px 16px rgba(0, 0, 0, 0.22);
@@ -1125,6 +1154,16 @@ th {
 .bubble.olive {
   background: radial-gradient(circle at 36% 28%, #f4df7c 0%, #e6c94b 42%, #60743d 100%);
   box-shadow: 0 18px 34px rgba(0, 0, 0, 0.34), 0 0 12px rgba(230, 201, 75, 0.13), inset 0 2px 2px rgba(255, 255, 255, 0.21), inset 0 -10px 16px rgba(0, 0, 0, 0.22);
+}
+
+.bubble.violet {
+  background: radial-gradient(circle at 36% 28%, #c4a9cf 0%, #9a7ba8 42%, #3d334f 100%);
+  box-shadow: 0 18px 34px rgba(0, 0, 0, 0.34), 0 0 12px rgba(154, 123, 168, 0.14), inset 0 2px 2px rgba(255, 255, 255, 0.21), inset 0 -10px 16px rgba(0, 0, 0, 0.22);
+}
+
+.bubble.rose {
+  background: radial-gradient(circle at 36% 28%, #df8f91 0%, #c96063 42%, #4a2634 100%);
+  box-shadow: 0 18px 34px rgba(0, 0, 0, 0.34), 0 0 12px rgba(201, 96, 99, 0.13), inset 0 2px 2px rgba(255, 255, 255, 0.2), inset 0 -10px 16px rgba(0, 0, 0, 0.22);
 }
 
 .bubble.moss {
@@ -1145,6 +1184,11 @@ th {
 .bubble.sage {
   background: radial-gradient(circle at 36% 28%, #eef19a 0%, #d4d968 42%, #47583a 100%);
   box-shadow: 0 18px 34px rgba(0, 0, 0, 0.34), 0 0 12px rgba(212, 217, 104, 0.12), inset 0 2px 2px rgba(255, 255, 255, 0.2), inset 0 -10px 16px rgba(0, 0, 0, 0.22);
+}
+
+.bubble.steel {
+  background: radial-gradient(circle at 36% 28%, #a8bfd1 0%, #6f8fa8 42%, #2d3d4f 100%);
+  box-shadow: 0 18px 34px rgba(0, 0, 0, 0.34), 0 0 12px rgba(111, 143, 168, 0.13), inset 0 2px 2px rgba(255, 255, 255, 0.2), inset 0 -10px 16px rgba(0, 0, 0, 0.22);
 }
 
 .bubble-summary {

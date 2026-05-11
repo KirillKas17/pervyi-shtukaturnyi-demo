@@ -20,21 +20,35 @@ const visualTriples = [
   ['#ffc04e', '#ff8845', '#d0383a'],
   ['#e6c94b', '#ba9c3f', '#60743d'],
   ['#efc653', '#c6a64b', '#657a40'],
-  ['#ffd879', '#b98b43', '#6f4f35'],
-  ['#ff7d55', '#d64d3f', '#7f2a32'],
-  ['#d4d968', '#8f9a47', '#47583a'],
 ];
 
-const gradientPairs = [
-  { from: visualTriples[0][0], to: visualTriples[0][2] },
-  { from: visualTriples[1][0], to: visualTriples[1][2] },
-  { from: visualTriples[2][0], to: visualTriples[2][2] },
-  { from: visualTriples[3][0], to: visualTriples[3][2] },
-  { from: visualTriples[4][0], to: visualTriples[4][2] },
-  { from: visualTriples[5][0], to: visualTriples[5][2] },
-  { from: visualTriples[6][0], to: visualTriples[6][2] },
-  { from: visualTriples[7][0], to: visualTriples[7][2] },
+const extendedTriples = [
+  ['#d8924a', '#8a5b38', '#4f3428'],
+  ['#c96063', '#87394b', '#4a2634'],
+  ['#7db8a2', '#4f7f72', '#2d4f4b'],
+  ['#9a7ba8', '#66517c', '#3d334f'],
+  ['#c8a46a', '#8d6746', '#5a4432'],
+  ['#9fae68', '#687a4b', '#3f5338'],
+  ['#a55b78', '#6e3a55', '#432838'],
+  ['#6f8fa8', '#4b6076', '#2d3d4f'],
 ];
+
+const segmentTriples = [
+  visualTriples[0],
+  extendedTriples[2],
+  visualTriples[2],
+  extendedTriples[3],
+  visualTriples[3],
+  extendedTriples[1],
+  visualTriples[4],
+  extendedTriples[7],
+  extendedTriples[0],
+  extendedTriples[5],
+  extendedTriples[6],
+  extendedTriples[4],
+];
+
+const gradientPairs = [...visualTriples, ...extendedTriples].map(([from, , to]) => ({ from, to }));
 const palette = gradientPairs.map((pair) => pair.from);
 const chartText = 'rgba(255, 255, 255, 0.58)';
 const chartGrid = 'rgba(255, 255, 255, 0.105)';
@@ -621,11 +635,11 @@ function financeStructureCard(rows, mainValue, mainLabel) {
 }
 
 function peachDonutChart(rows, total, centerLabel = 'Итого') {
-  const colors = visualTriples.map(([top]) => top);
+  const colors = segmentTriples.map(([top]) => top);
   const safeRows = rows
     .filter(([, value]) => Number(value || 0) > 0)
     .sort((a, b) => Number(b[1] || 0) - Number(a[1] || 0))
-    .slice(0, 5);
+    .slice(0, 8);
   const sumValue = safeRows.reduce((acc, [, value]) => acc + Number(value || 0), 0);
   const base = sumValue || 1;
   let angle = -40;
@@ -668,7 +682,7 @@ function bubbleChart(rows, total, yLabel = 'Сумма', xLabel = 'Доля', cl
     .sort((a, b) => Number(b[1] || 0) - Number(a[1] || 0))
     .slice(0, 8);
   const max = Math.max(...safeRows.map(([, value]) => Number(value || 0)), 1);
-  const colors = ['fire', 'ember', 'amber', 'olive', 'moss', 'sand', 'clay', 'sage'];
+  const colors = ['fire', 'teal', 'amber', 'violet', 'olive', 'rose', 'moss', 'steel'];
   const positions = [
     [72, 34],
     [55, 48],
