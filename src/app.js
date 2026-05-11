@@ -444,11 +444,11 @@ function renderExpenses() {
           ${peachDonutChart(objectExpenses(), objectExpenseTotal(), 'Итого', 'legend-left')}
         </article>
 
-        <article class="panel donut-panel expense-detail">
+        <article class="panel placeholder-panel expense-placeholder">
           <div class="panel-title">
-            <h3>Расшифровка объекта</h3>
+            <h3>Детальная информация по расходам</h3>
           </div>
-          ${peachDonutChart(objectExpenses(), objectExpenseTotal(), 'Итого')}
+          <div class="placeholder-copy">Здесь добавим подробную расшифровку расходов: строки, статьи, суммы и привязку к выбранному объекту.</div>
         </article>
       </section>
     </div>
@@ -491,6 +491,13 @@ function renderWorks() {
             <h3>Виды работ</h3>
           </div>
           <div class="works-list">
+            <div class="work-table-head">
+              <span>Вид работ</span>
+              <span>План / факт</span>
+              <span>Выручка</span>
+              <span>Прибыль</span>
+              <span>Маржа</span>
+            </div>
             ${rows.map((row, index) => workListItem(row, index)).join('')}
           </div>
         </article>
@@ -554,15 +561,12 @@ function workListItem(row, index) {
   const completion = row.volume ? 100 : 0;
   const progressClass = workProgressClass(completion);
   const margin = Number(row.marginPct || pct(row.netProfit, row.revenue));
+  const marginClass = margin >= 28 ? 'good' : margin < 15 ? 'bad' : 'mid';
   return `
     <button class="work-list-item ${state.selectedWork === index ? 'active' : ''}" data-work="${index}">
-      <div class="work-list-top">
+      <div class="work-name-cell" title="${row.name || `Работа ${index + 1}`}">
         <strong>${row.name || `Работа ${index + 1}`}</strong>
-        <span>${number(margin, 0)}%</span>
-      </div>
-      <div class="work-list-meta">
-        <span>${money(row.revenue)}</span>
-        <span>${money(row.netProfit)}</span>
+        <span>${row.executor || 'Исполнитель не указан'}</span>
       </div>
       <div class="work-planfact">
         <div>
@@ -571,6 +575,20 @@ function workListItem(row, index) {
         </div>
         <div class="work-progress-track">
           <i class="${progressClass}" style="width:${Math.min(100, completion)}%"></i>
+        </div>
+      </div>
+      <div class="work-money-cell">
+        <strong>${money(row.revenue)}</strong>
+        <span>выручка</span>
+      </div>
+      <div class="work-money-cell">
+        <strong>${money(row.netProfit)}</strong>
+        <span>прибыль</span>
+      </div>
+      <div class="work-margin-cell">
+        <b class="${marginClass}">${number(margin, 0)}%</b>
+        <div class="work-mini-track">
+          <i style="width:${Math.min(100, (Math.max(0, margin) / 60) * 100)}%"></i>
         </div>
       </div>
     </button>
@@ -743,7 +761,7 @@ function profitImpactSplit(summary, objectTotal, fixedTotalValue) {
 
   return `
     <div class="profit-split">
-      <div class="split-top">
+      <div class="split-metrics">
         <div class="mini-metric">
           <span>Выручка</span>
           <strong>${money(summary.revenue)}</strong>
@@ -753,9 +771,6 @@ function profitImpactSplit(summary, objectTotal, fixedTotalValue) {
           <strong>${money(gross)}</strong>
         </div>
       </div>
-      <div class="split-caption">
-        Из валовой прибыли видно, сколько остаётся в чистой и сколько забирают расходы.
-      </div>
       <div class="decomp-track">
         <div class="decomp-line">
           <div class="seg net" style="width:${part(positiveNet)}%;" title="Чистая прибыль: ${money(net)}">Чистая прибыль</div>
@@ -764,9 +779,18 @@ function profitImpactSplit(summary, objectTotal, fixedTotalValue) {
         </div>
       </div>
       <div class="impact-legend">
-        <div><span class="impact-dot net"></span><span>Чистая прибыль</span><strong>${money(net)} • ${number(pct(net, gross))}%</strong></div>
-        <div><span class="impact-dot obj"></span><span>Объектные расходы</span><strong>${money(objectTotal)} • ${number(pct(objectTotal, gross))}%</strong></div>
-        <div><span class="impact-dot fix"></span><span>Постоянные платежи</span><strong>${money(fixedTotalValue)} • ${number(pct(fixedTotalValue, gross))}%</strong></div>
+        <div class="legend-item">
+          <span class="impact-dot net"></span>
+          <span class="legend-label">Чистая прибыль <strong>${money(net)}</strong></span>
+        </div>
+        <div class="legend-item">
+          <span class="impact-dot obj"></span>
+          <span class="legend-label">Объектные <strong>${money(objectTotal)}</strong></span>
+        </div>
+        <div class="legend-item">
+          <span class="impact-dot fix"></span>
+          <span class="legend-label">Постоянные <strong>${money(fixedTotalValue)}</strong></span>
+        </div>
       </div>
     </div>
   `;
